@@ -1,13 +1,16 @@
-import { Controller, Get, Post, Body, Param, Delete, Put } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Put, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { BranchesService } from './branches.service';
 import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
 import { Branch } from './branch.entity';
 import { BaseResponse } from 'src/common/dto/base-response.dto';
 import { IdResponseDto } from 'src/common/dto/id-response.dto';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('branches')
+@ApiBearerAuth('access-token') 
+@UseGuards(AuthGuard('jwt-access'))
 @Controller('branches')
 export class BranchesController {
   constructor(private readonly branchesService: BranchesService) {}

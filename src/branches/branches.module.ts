@@ -4,6 +4,7 @@ import { Branch } from './branch.entity';
 import { BranchesService } from './branches.service';
 import { BranchesController } from './branches.controller';
 
+
 @Module({
   imports: [TypeOrmModule.forFeature([Branch])],
   providers: [BranchesService],

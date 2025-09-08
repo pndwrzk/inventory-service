@@ -13,44 +13,45 @@ import { BaseResponse } from './common/dto/base-response.dto';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  
-
-
   app.useGlobalInterceptors(new ResponseInterceptor());
 
-  
-
   app.useGlobalPipes(
-  new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    exceptionFactory: (errors: ValidationError[]) => {
-      const formatted = {};
-      errors.forEach((err) => {
-        if (err.constraints) {
-          formatted[err.property] = Object.values(err.constraints).join(', ');
-        }
-      });
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      exceptionFactory: (errors: ValidationError[]) => {
+        const formatted = {};
+        errors.forEach((err) => {
+          if (err.constraints) {
+            formatted[err.property] = Object.values(err.constraints).join(', ');
+          }
+        });
 
-
-      return new UnprocessableEntityException(
-        BaseResponse.Error('Validation failed', formatted),
-      );
-    },
-  }),
-);
-
-
+        return new UnprocessableEntityException(
+          BaseResponse.Error('Validation failed', formatted),
+        );
+      },
+    }),
+  );
 
   app.useGlobalFilters(new AllExceptionsFilter());
 
-
   const config = new DocumentBuilder()
     .setTitle('INVENTORY SERVICE API')
-    .setDescription('ExpressJs + MySQL + Swagger Example')
+    // .setDescription('ExpressJs + MySQL + Swagger Example')
     .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'Authorization',
+        description: 'Enter JWT token here',
+        in: 'header',
+      },
+      'access-token',
+    )
     .build();
-
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api-docs', app, document);
 

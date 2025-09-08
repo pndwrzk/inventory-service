@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+
 export enum ResponseStatus {
   Success = 'success',
   Failed = 'failed',
@@ -8,9 +9,12 @@ export enum ResponseStatus {
 export class BaseResponse<T> {
   @ApiProperty({ enum: ResponseStatus })
   status: ResponseStatus;
+
   @ApiProperty()
   message: string;
-  @ApiProperty({ nullable: true })
+
+  // Untuk Swagger, kita kasih type any
+  @ApiProperty({ nullable: true, type: 'object', additionalProperties: true })
   data: T | null;
 
   private constructor(status: ResponseStatus, message: string, data?: T) {

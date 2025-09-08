@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
@@ -18,7 +22,9 @@ export class UsersService {
   ) {}
 
   async create(data: CreateUserDto): Promise<IdResponseDto> {
-    const existing = await this.userRepo.findOne({ where: { username: data.username } });
+    const existing = await this.userRepo.findOne({
+      where: { username: data.username },
+    });
     if (existing) {
       throw new BadRequestException('Username already exists');
     }
@@ -27,8 +33,13 @@ export class UsersService {
     if (data.role === UserRole.BRANCH && !data.branch_id) {
       throw new BadRequestException('branch_id is required for role "branch"');
     }
-    if ((data.role === UserRole.STAFF || data.role === UserRole.SUPERVISOR) && data.branch_id) {
-      throw new BadRequestException('branch_id must be empty for staff or supervisor');
+    if (
+      (data.role === UserRole.STAFF || data.role === UserRole.SUPERVISOR) &&
+      data.branch_id
+    ) {
+      throw new BadRequestException(
+        'branch_id must be empty for staff or supervisor',
+      );
     }
 
     // Hash password
@@ -44,8 +55,7 @@ export class UsersService {
     return { id: saved.id };
   }
 
-
-   async login(username: string, password: string): Promise<LoginResponseDto> {
+  async login(username: string, password: string): Promise<LoginResponseDto> {
     const user = await this.userRepo.findOne({ where: { username } });
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
@@ -56,16 +66,21 @@ export class UsersService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const accessTokenExp = Math.floor(Date.now() / 1000) + 60 * 60; // 1 jam
-    const refreshTokenExp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30; // 30 hari
+    
+    const payload = { sub: user.id, username: user.username };
+    
+    const accessToken = this.jwtService.sign(payload, {
+      secret: process.env.JWT_ACCESS_SECRET,
+      expiresIn: '1h',
+    });
 
-    const payload = {
-      nameid: user.id,
-      unique_name: user.username,
-    };
+    const refreshToken = this.jwtService.sign(payload, {
+      secret: process.env.JWT_REFRESH_SECRET,
+      expiresIn: '30d',
+    });
 
-    const access_token = this.jwtService.sign(payload, { expiresIn: '1h' });
-    const refresh_token = this.jwtService.sign(payload, { expiresIn: '30d' });
+    const accessTokenExp = Math.floor(Date.now() / 1000) + 60 * 60;
+    const refreshTokenExp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30;
 
     return {
       user: {
@@ -74,14 +89,11 @@ export class UsersService {
         full_name: user.full_name,
       },
       tokens: {
-        access_token,
+        access_token: accessToken,
         access_token_expired: accessTokenExp,
-        refresh_token,
+        refresh_token: refreshToken,
         refresh_token_expired: refreshTokenExp,
       },
     };
   }
-
-
-  
 }

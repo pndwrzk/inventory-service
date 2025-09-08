@@ -4,16 +4,17 @@ import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { User } from './user.entity';
 import { JwtModule } from '@nestjs/jwt';
+import { JwtAccessStrategy } from './jwt-access.strategy';
+import { JwtRefreshStrategy } from './jwt-refresh.strategy';
+
+
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User]),
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'secretKey123',
-      signOptions: { expiresIn: '1h' },
-    }),
+    JwtModule.register({}),
   ],
-  providers: [UsersService],
+  providers: [UsersService, JwtAccessStrategy, JwtRefreshStrategy],
   controllers: [UsersController],
   exports: [UsersService],
 })
