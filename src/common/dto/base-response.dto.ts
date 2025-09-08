@@ -1,4 +1,4 @@
-// src/common/dto/base-response.dto.ts
+import { ApiProperty } from '@nestjs/swagger';
 export enum ResponseStatus {
   Success = 'success',
   Failed = 'failed',
@@ -6,8 +6,11 @@ export enum ResponseStatus {
 }
 
 export class BaseResponse<T> {
+  @ApiProperty({ enum: ResponseStatus })
   status: ResponseStatus;
+  @ApiProperty()
   message: string;
+  @ApiProperty({ nullable: true })
   data: T | null;
 
   private constructor(status: ResponseStatus, message: string, data?: T) {
