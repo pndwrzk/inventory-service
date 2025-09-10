@@ -36,9 +36,6 @@ export class BranchesController {
   @ApiResponse({ status: 200, description: 'Branch detail', type: Branch })
   async findOne(@Param('id') id: string): Promise<BaseResponse<Branch | null>> {
     const branch = await this.branchesService.findOne(id);
-    if (!branch) {
-      return BaseResponse.Fail('Branch not found');
-    }
     return BaseResponse.Success(branch, 'Branch retrieved successfully');
   }
 

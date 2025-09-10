@@ -68,7 +68,7 @@ export class UsersService {
 
     
     const payload = { sub: user.id, username: user.username };
-    
+
     const accessToken = this.jwtService.sign(payload, {
       secret: process.env.JWT_ACCESS_SECRET,
       expiresIn: '1h',
@@ -95,5 +95,10 @@ export class UsersService {
         refresh_token_expired: refreshTokenExp,
       },
     };
+  }
+
+
+  async findById(id: string): Promise<User | null> {
+    return await this.userRepo.findOne({ where: { id } });
   }
 }

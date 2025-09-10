@@ -12,17 +12,21 @@ export class ProductsService {
     private readonly productRepo: Repository<Product>,
   ) {}
 
-  create(dto: CreateProductDto): Promise<Product> {
+  async create(dto: CreateProductDto): Promise<Product> {
     const product = this.productRepo.create(dto);
-    return this.productRepo.save(product);
+    return await this.productRepo.save(product);
   }
 
-  findAll(): Promise<Product[]> {
-    return this.productRepo.find();
+  async findAll(): Promise<Product[]> {
+    return await this.productRepo.find();
   }
 
-  findOne(id: string): Promise<Product | null> {
-    return this.productRepo.findOne({ where: { id } });
+  async findOne(id: string): Promise<Product | null> {
+    const product = await this.productRepo.findOne({ where: { id } });
+    if (!product) {
+      throw new NotFoundException(`Product with id ${id} not found`);
+    }
+    return product;
   }
 
   async update(id: string, dto: UpdateProductDto): Promise<Product> {
@@ -36,7 +40,7 @@ export class ProductsService {
 
   async remove(id: string): Promise<void> {
     const result = await this.productRepo.delete(id);
-    if (result.affected === 0) {
+    if (!result.affected) {
       throw new NotFoundException(`Product with id ${id} not found`);
     }
   }

@@ -12,17 +12,21 @@ export class BranchesService {
     private readonly branchRepo: Repository<Branch>,
   ) {}
 
-  create(dto: CreateBranchDto): Promise<Branch> {
+  async create(dto: CreateBranchDto): Promise<Branch> {
     const branch = this.branchRepo.create(dto);
-    return this.branchRepo.save(branch);
+    return await this.branchRepo.save(branch);
   }
 
-  findAll(): Promise<Branch[]> {
-    return this.branchRepo.find();
+  async findAll(): Promise<Branch[]> {
+    return await this.branchRepo.find();
   }
 
-  findOne(id: string): Promise<Branch | null> {
-    return this.branchRepo.findOne({ where: { id } });
+  async findOne(id: string): Promise<Branch | null> {
+    const branch = await this.branchRepo.findOne({ where: { id } });
+    if (!branch) {
+       throw new Error(`Branch with id ${id} not found`);
+    }
+    return branch;
   }
 
   async update(id: string, dto: UpdateBranchDto): Promise<Branch> {
@@ -35,6 +39,9 @@ export class BranchesService {
   }
 
   async remove(id: string): Promise<void> {
-    await this.branchRepo.delete(id);
+    const result = await this.branchRepo.delete(id);
+    if (!result.affected) {
+      throw new Error(`Branch with id ${id} not found`);
+    }
   }
 }

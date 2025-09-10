@@ -23,11 +23,11 @@ export class Product {
   @Column({ type: 'int', default: 0 })
   stock: number;
 
-  @ApiProperty()
-  @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+@ApiProperty()
+  @CreateDateColumn()
   created_at: Date;
 
   @ApiProperty()
-  @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @UpdateDateColumn()
   updated_at: Date;
 }

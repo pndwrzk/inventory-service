@@ -36,9 +36,6 @@ export class ProductsController {
   @ApiResponse({ status: 200, description: 'Product detail', type: Product })
   async findOne(@Param('id') id: string): Promise<BaseResponse<Product | null>> {
     const product = await this.productsService.findOne(id);
-    if (!product) {
-      return BaseResponse.Fail('Product not found');
-    }
     return BaseResponse.Success(product, 'Product retrieved successfully');
   }
 

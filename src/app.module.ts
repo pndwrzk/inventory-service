@@ -4,13 +4,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
 import { BranchesModule } from './branches/branches.module';
 import { ProductsModule } from './products/products.module';
+import { RequestsModule } from './requests/requests.module';
 
 @Module({
   imports: [
-    // biar .env bisa dipakai di semua module
+   
     ConfigModule.forRoot({ isGlobal: true }),
 
-    // DB config pakai env
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -29,6 +29,7 @@ import { ProductsModule } from './products/products.module';
     UsersModule,
     BranchesModule,
     ProductsModule,
+    RequestsModule,
   ],
 })
 export class AppModule {}
