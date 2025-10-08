@@ -10,7 +10,6 @@ import { RequestsModule } from './requests/requests.module';
   imports: [
    
     ConfigModule.forRoot({ isGlobal: true }),
-
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

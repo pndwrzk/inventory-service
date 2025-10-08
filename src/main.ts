@@ -39,7 +39,6 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('INVENTORY SERVICE API')
-    // .setDescription('ExpressJs + MySQL + Swagger Example')
     .setVersion('1.0')
     .addBearerAuth(
       {
@@ -56,6 +55,6 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api-docs', app, document);
 
-  await app.listen(3000);
+  await app.listen(process.env.APP_PORT || 3000);
 }
 bootstrap();

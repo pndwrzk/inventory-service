@@ -4,9 +4,12 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { UserRole } from './user-role.enum';
+import { Branch } from 'src/branches/branch.entity';
 
 @Entity('users')
 export class User {
@@ -15,7 +18,7 @@ export class User {
   id: string;
 
   @ApiProperty()
-  @Column({ length: 50, unique: true }) // username harus unik
+  @Column({ length: 50, unique: true })
   username: string;
 
   @ApiProperty()
@@ -33,10 +36,12 @@ export class User {
   })
   role: UserRole;
 
-  @ApiProperty({ required: false, nullable: true })
-  @Column({ type: 'uuid', nullable: true })
-  branch_id: string | null;
 
+  @ApiProperty({ required: false, nullable: true })
+  @ManyToOne(() => Branch, { eager: false, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'branch_id' })
+  branch: Branch | null;
+ 
   @ApiProperty()
   @CreateDateColumn()
   created_at: Date;

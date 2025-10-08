@@ -13,7 +13,7 @@ export class BaseResponse<T> {
   @ApiProperty()
   message: string;
 
-  // Untuk Swagger, kita kasih type any
+  
   @ApiProperty({ nullable: true, type: 'object', additionalProperties: true })
   data: T | null;
 
