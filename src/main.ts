@@ -3,16 +3,19 @@ import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import * as express from 'express';
 import {
   ValidationPipe,
   UnprocessableEntityException,
   ValidationError,
 } from '@nestjs/common';
 import { BaseResponse } from './common/dto/base-response.dto';
+import { join } from 'path';
 
 async function bootstrap() {
  
   const app = await NestFactory.create(AppModule, { cors: true });
+  
 
   app.useGlobalInterceptors(new ResponseInterceptor());
   

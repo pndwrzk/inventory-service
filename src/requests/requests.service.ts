@@ -62,17 +62,6 @@ export class RequestsService {
             );
           }
 
-          if (item.quantity <= 0) {
-            throw new BadRequestException(
-              `Quantity for product ${product.name} must be greater than zero`,
-            );
-          }
-
-          if (item.quantity > product.stock) {
-            throw new BadRequestException(
-              `Quantity for product ${product.name} exceeds available stock`,
-            );
-          }
 
           return queryRunner.manager.create(RequestItem, {
             request: savedRequest,
@@ -89,6 +78,15 @@ export class RequestsService {
         if (!fs.existsSync(uploadDir)) {
           fs.mkdirSync(uploadDir, { recursive: true });
         }
+
+        const statusHistory = queryRunner.manager.create(RequestStatusHistory, {
+        action_by: userId,
+        status: RequestStatus.PENDING,
+        remark: dto.remarks || null,
+        request: savedRequest,
+      });
+
+      await queryRunner.manager.save(statusHistory);
 
         const attachments = files.map((file) => {
           if (!file.buffer) {
@@ -110,14 +108,7 @@ export class RequestsService {
         await queryRunner.manager.save(attachments);
       }
 
-      const statusHistory = queryRunner.manager.create(RequestStatusHistory, {
-        action_by: userId,
-        status: RequestStatus.PENDING,
-        remark: dto.remarks || null,
-        request: savedRequest,
-      });
 
-      await queryRunner.manager.save(statusHistory);
 
       await queryRunner.commitTransaction();
 
@@ -150,7 +141,7 @@ export class RequestsService {
       })),
       attachments: req.attachments?.map((a) => ({
         id: a.id,
-        file_path: a.file_path,
+        file_path: `${process.env.APP_URL}/${ a.file_path}`,
       })),
       status_histories: req.statusHistories?.map((s) => ({
         id: s.id,

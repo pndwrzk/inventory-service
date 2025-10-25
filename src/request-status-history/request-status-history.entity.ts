@@ -5,11 +5,13 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { User } from '../users/user.entity';
 import { Request } from '../requests/request.entity';
 import { RequestStatus } from './request-status.enum';
+import { Attachment } from 'src/attachments/attachments.entity';
 
 
 @Entity('request_status_history')
@@ -46,4 +48,7 @@ export class RequestStatusHistory {
   @ApiProperty()
   @CreateDateColumn()
   created_at: Date;
+
+  @OneToMany(() => Attachment, (attachment) => attachment.requestStatusHistory)
+  attachments: Attachment[];
 }

@@ -13,6 +13,10 @@ export class ProductsService {
   ) {}
 
   async create(dto: CreateProductDto): Promise<Product> {
+     const existing = await this.productRepo.findOne({ where: { sku: dto.sku } });
+      if (existing) {
+        throw new Error(`SKU "${dto.sku}" already exists`);
+      }
     const product = this.productRepo.create(dto);
     return await this.productRepo.save(product);
   }
