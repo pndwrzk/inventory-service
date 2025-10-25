@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as fs from 'fs';
@@ -163,4 +163,45 @@ export class RequestsService {
       updated_at: req.updated_at,
     }));
   }
+
+  async updateStatus(
+  requestId: string,
+  newStatus: RequestStatus,
+  actionBy: string,
+  remark?: string,
+): Promise<Request> {
+  const queryRunner = this.requestRepository.manager.connection.createQueryRunner();
+  await queryRunner.connect();
+  await queryRunner.startTransaction();
+
+  try {
+    const request = await queryRunner.manager.findOne(Request, {
+      where: { id: requestId },
+      relations: ['statusHistories'],
+    });
+
+    if (!request) {
+      throw new NotFoundException(`Request with id ${requestId} not found`);
+    }
+
+    const statusHistory = queryRunner.manager.create(RequestStatusHistory, {
+      request,
+      status: newStatus,
+      action_by: actionBy,
+      remark: remark || null,
+    });
+
+    await queryRunner.manager.save(statusHistory);
+
+    await queryRunner.commitTransaction();
+
+    return request; 
+  } catch (err) {
+    await queryRunner.rollbackTransaction();
+    throw err;
+  } finally {
+    await queryRunner.release();
+  }
+}
+
 }

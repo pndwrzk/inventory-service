@@ -7,6 +7,8 @@ import {
   UseGuards,
   Req,
   Get,
+  Patch,
+  Param,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import {
@@ -26,6 +28,7 @@ import { IdResponseDto } from 'src/common/dto/id-response.dto';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { UserRole } from '../users/user-role.enum';
 import { RequestResponseDto } from './dto/request-response.dto';
+import { UpdateStatusDto } from './dto/update-status.dto';
 
 @ApiTags('requests')
 @Roles(UserRole.STAFF)
@@ -94,4 +97,30 @@ export class RequestsController {
     const requests = await this.requestsService.findAll();
     return BaseResponse.Success(requests, 'Requests retrieved successfully');
   }
+
+  @Patch(':id/status')
+  @ApiOperation({ summary: 'Update status of a request' })
+  @ApiResponse({ status: 200, description: 'Request status updated successfully' })
+  async updateStatus(
+    @Param('id') id: string,
+    @Body() dto: UpdateStatusDto,
+    @Req() req: { user: JwtUser },
+  ) {
+    const userId = req.user.userId;
+
+
+    const updatedRequest = await this.requestsService.updateStatus(
+      id,
+      dto.status,
+      userId,
+      dto.remark,
+    );
+
+    return BaseResponse.Success(
+      { id: updatedRequest.id },
+      'Request status updated successfully',
+    );
+  }
 }
+
+
