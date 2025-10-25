@@ -51,10 +51,6 @@ export class RequestResponseDto {
   pickup_schedule: Date | null;
 
 
-
-
-
-
   @ApiProperty({ type: [StatusHistoryDto] })
   status_histories: StatusHistoryDto[];
 

@@ -140,7 +140,7 @@ async findAll(
   const skip = (page - 1) * size;
 
   const [requests, total] = await this.requestRepository.findAndCount({
-    relations: ['items', 'items.product', 'statusHistories.attachments', 'statusHistories'],
+    relations: ['items', 'items.product', 'statusHistories.attachments', 'statusHistories','statusHistories.user'],
     order: {
       created_at: 'DESC',
       statusHistories: {
@@ -166,7 +166,7 @@ async findAll(
       id: s.id,
       status: s.status,
       remark: s.remark,
-      action_by: s.action_by,
+      action_by: s.user.full_name,
       created_at: s.created_at,
       attachments: s.attachments?.map((a) => ({
         id: a.id,
