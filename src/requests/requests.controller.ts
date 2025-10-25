@@ -28,7 +28,7 @@ import { IdResponseDto } from 'src/common/dto/id-response.dto';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { UserRole } from '../users/user-role.enum';
 import { RequestResponseDto } from './dto/request-response.dto';
-import { ApproveStatusDto, RejectStatusDto } from './dto/update-status.dto';
+import { ApproveStatusDto, CompleteRequestDto, RejectStatusDto } from './dto/update-status.dto';
 
 @ApiTags('requests')
 @Roles(UserRole.STAFF)
@@ -133,7 +133,49 @@ export class RequestsController {
     );
     return BaseResponse.Success({ id: request.id }, 'Request rejected successfully');
   }
+
+  @Patch(':id/complete')
+@UseInterceptors(FilesInterceptor('files', 5)) // ganti dari attachments ke files
+@ApiOperation({ summary: 'Complete a request' })
+@ApiConsumes('multipart/form-data')
+@ApiResponse({ status: 200, description: 'Request completed', type: IdResponseDto })
+@ApiBody({
+  schema: {
+    type: 'object',
+    properties: {
+      files: { 
+        type: 'array',
+        items: { type: 'string', format: 'binary' },
+      },
+      remarks: {
+        type: 'string',
+        example: 'Final submission',
+      },
+    },
+  },
+})
+async complete(
+  @Param('id') id: string,
+  @UploadedFiles() files: Express.Multer.File[],
+  @Body() body: CompleteRequestDto,
+  @Req() req: { user: JwtUser },
+) {
+  const request = await this.requestsService.completeRequest(
+    id,
+    req.user.userId,
+    files,
+    body.remarks,
+  );
+
+  return BaseResponse.Success(
+    { id: request.id },
+    'Request completed successfully',
+  );
 }
+
+}
+
+
 
 
 

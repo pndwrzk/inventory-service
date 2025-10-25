@@ -13,3 +13,8 @@ export class  RejectStatusDto {
   remark?: string;
 }
 
+export class CompleteRequestDto {
+  @ApiProperty({ required: false, example: 'Final submission' })
+  remarks?: string;
+}
+

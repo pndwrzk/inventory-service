@@ -210,6 +210,74 @@ export class RequestsService {
     return request;
   }
 
+  async completeRequest(
+  requestId: string,
+  userId: string,
+  files: Express.Multer.File[],
+  remarks?: string,
+): Promise<Request> {
+  const request = await this.requestRepository.findOne({
+    where: { id: requestId },
+    relations: ['statusHistories', 'statusHistories.attachments'],
+  });
+
+  if (!request) {
+    throw new NotFoundException(`Request with id ${requestId} not found`);
+  }
+
+  const queryRunner = this.requestRepository.manager.connection.createQueryRunner();
+  await queryRunner.connect();
+  await queryRunner.startTransaction();
+
+  try {
+   
+    const statusHistory = queryRunner.manager.create(RequestStatusHistory, {
+      action_by: userId,
+      status: RequestStatus.COMPLETED,
+      remark: remarks || null,
+      request: request,
+    });
+
+    await queryRunner.manager.save(statusHistory);
+
+
+    if (files?.length > 0) {
+      const uploadDir = path.join(process.cwd(), 'uploads/attachments');
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
+      const attachments = files.map((file) => {
+        if (!file.buffer) {
+          throw new BadRequestException(`${file.originalname} tidak ada buffer`);
+        }
+
+        const filename = `${Date.now()}-${file.originalname}`;
+        const filePath = path.join(uploadDir, filename);
+        fs.writeFileSync(filePath, file.buffer);
+
+        return queryRunner.manager.create(Attachment, {
+          request: request,
+          file_path: path.join('uploads/attachments', filename),
+          requestStatusHistory: statusHistory,
+        });
+      });
+
+      await queryRunner.manager.save(attachments);
+    }
+
+    await queryRunner.commitTransaction();
+
+    return request;
+  } catch (err) {
+    await queryRunner.rollbackTransaction();
+    throw err;
+  } finally {
+    await queryRunner.release();
+  }
+}
+
+
   
 
 }
