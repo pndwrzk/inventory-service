@@ -9,8 +9,8 @@ import { IdResponseDto } from 'src/common/dto/id-response.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('products')
-@ApiBearerAuth('access-token')
-@UseGuards(AuthGuard('jwt-access'))
+// @ApiBearerAuth('access-token')
+// @UseGuards(AuthGuard('jwt-access'))
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
