@@ -10,4 +10,7 @@ export class UserResponseDto {
 
   @ApiProperty()
   full_name: string;
+
+  @ApiProperty()
+  role: string;
 }
