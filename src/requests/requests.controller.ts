@@ -120,7 +120,7 @@ export class RequestsController {
   @Patch(':id/reject')
   @ApiOperation({ summary: 'Reject a request' })
   @ApiResponse({ status: 200, description: 'Request rejected', type: IdResponseDto })
-  @ApiBody({ type: RejectStatusDto }) // cuma pakai remark
+  @ApiBody({ type: RejectStatusDto }) 
   async reject(
     @Param('id') id: string,
     @Body() dto: RejectStatusDto,

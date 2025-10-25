@@ -9,9 +9,6 @@ export class  ApproveStatusDto {
 }
 
 export class  RejectStatusDto {
-  @ApiProperty({ required: false, type: String, format: 'date-time' })
-  pickup_schedule: Date;
-
   @ApiProperty({ required: false })
   remark?: string;
 }
