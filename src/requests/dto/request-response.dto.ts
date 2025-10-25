@@ -47,6 +47,11 @@ export class RequestResponseDto {
 
   @ApiProperty({ type: [RequestItemDto] })
   items: RequestItemDto[];
+  @ApiProperty()
+  pickup_schedule: Date | null;
+
+
+
 
 
 

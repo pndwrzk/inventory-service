@@ -147,6 +147,7 @@ export class RequestsService {
     return requests.map((req) => ({
       id: req.id,
       current_status: req.statusHistories?.[0]?.status || 'Unknown',
+      pickup_schedule: req.pickup_schedule || null,
       items: req.items?.map((item) => ({
         id: item.id,
         product_name: item.product?.name || 'Unknown Product',
