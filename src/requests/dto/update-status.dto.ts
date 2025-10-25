@@ -1,14 +1,18 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsString } from 'class-validator';
-import { RequestStatus } from '../request-status.enum';
 
-export class UpdateStatusDto {
-  @ApiProperty({ enum: RequestStatus, description: 'New status of the request' })
-  @IsEnum(RequestStatus)
-  status: RequestStatus;
+export class  ApproveStatusDto {
+  @ApiProperty({ required: false, type: String, format: 'date-time' })
+  pickup_schedule: Date;
 
-  @ApiProperty({ description: 'Optional remark for status change', required: false })
-  @IsOptional()
-  @IsString()
+  @ApiProperty({ required: false })
   remark?: string;
 }
+
+export class  RejectStatusDto {
+  @ApiProperty({ required: false, type: String, format: 'date-time' })
+  pickup_schedule: Date;
+
+  @ApiProperty({ required: false })
+  remark?: string;
+}
+

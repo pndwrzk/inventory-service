@@ -28,7 +28,7 @@ import { IdResponseDto } from 'src/common/dto/id-response.dto';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { UserRole } from '../users/user-role.enum';
 import { RequestResponseDto } from './dto/request-response.dto';
-import { UpdateStatusDto } from './dto/update-status.dto';
+import { ApproveStatusDto, RejectStatusDto } from './dto/update-status.dto';
 
 @ApiTags('requests')
 @Roles(UserRole.STAFF)
@@ -98,29 +98,43 @@ export class RequestsController {
     return BaseResponse.Success(requests, 'Requests retrieved successfully');
   }
 
-  @Patch(':id/status')
-  @ApiOperation({ summary: 'Update status of a request' })
-  @ApiResponse({ status: 200, description: 'Request status updated successfully' })
-  async updateStatus(
+  @Patch(':id/approve')
+  @ApiOperation({ summary: 'Approve a request' })
+  @ApiResponse({ status: 200, description: 'Request approved', type: IdResponseDto })
+  @ApiBody({ type: ApproveStatusDto }) 
+  async approve(
     @Param('id') id: string,
-    @Body() dto: UpdateStatusDto,
+    @Body() dto: ApproveStatusDto,
     @Req() req: { user: JwtUser },
   ) {
-    const userId = req.user.userId;
-
-
-    const updatedRequest = await this.requestsService.updateStatus(
+    const request = await this.requestsService.approveRequest(
       id,
-      dto.status,
-      userId,
+      req.user.userId,
+      dto.pickup_schedule,
       dto.remark,
     );
+    return BaseResponse.Success({ id: request.id }, 'Request approved successfully');
+  }
 
-    return BaseResponse.Success(
-      { id: updatedRequest.id },
-      'Request status updated successfully',
+ 
+  @Patch(':id/reject')
+  @ApiOperation({ summary: 'Reject a request' })
+  @ApiResponse({ status: 200, description: 'Request rejected', type: IdResponseDto })
+  @ApiBody({ type: RejectStatusDto }) // cuma pakai remark
+  async reject(
+    @Param('id') id: string,
+    @Body() dto: RejectStatusDto,
+    @Req() req: { user: JwtUser },
+  ) {
+    const request = await this.requestsService.rejectRequest(
+      id,
+      req.user.userId,
+      dto.remark,
     );
+    return BaseResponse.Success({ id: request.id }, 'Request rejected successfully');
   }
 }
+
+
 
 

@@ -164,44 +164,59 @@ export class RequestsService {
     }));
   }
 
-  async updateStatus(
-  requestId: string,
-  newStatus: RequestStatus,
-  actionBy: string,
-  remark?: string,
-): Promise<Request> {
-  const queryRunner = this.requestRepository.manager.connection.createQueryRunner();
-  await queryRunner.connect();
-  await queryRunner.startTransaction();
-
-  try {
-    const request = await queryRunner.manager.findOne(Request, {
+  async approveRequest(
+    requestId: string,
+    userId: string,
+    pickupSchedule: Date,
+    remark?: string,
+  ): Promise<Request> {
+    const request = await this.requestRepository.findOne({
       where: { id: requestId },
       relations: ['statusHistories'],
     });
-
     if (!request) {
       throw new NotFoundException(`Request with id ${requestId} not found`);
     }
 
-    const statusHistory = queryRunner.manager.create(RequestStatusHistory, {
-      request,
-      status: newStatus,
-      action_by: actionBy,
+    request.pickup_schedule = pickupSchedule;
+    await this.requestRepository.save(request);
+
+
+    const statusHistory = this.requestStatusHistoryRepository.create({
+      action_by: userId,
+      status: RequestStatus.APPROVED,
       remark: remark || null,
+      request: request,
     });
+    await this.requestStatusHistoryRepository.save(statusHistory);
 
-    await queryRunner.manager.save(statusHistory);
-
-    await queryRunner.commitTransaction();
-
-    return request; 
-  } catch (err) {
-    await queryRunner.rollbackTransaction();
-    throw err;
-  } finally {
-    await queryRunner.release();
+    return request;
   }
-}
+
+  async rejectRequest(
+    requestId: string,
+    userId: string,
+    remark?: string,
+  ): Promise<Request> {
+    const request = await this.requestRepository.findOne({
+      where: { id: requestId },
+      relations: ['statusHistories'],
+    });
+    if (!request) {
+      throw new NotFoundException(`Request with id ${requestId} not found`);
+    }
+
+    const statusHistory = this.requestStatusHistoryRepository.create({
+      action_by: userId,
+      status: RequestStatus.REJECTED,
+      remark: remark || null,
+      request: request,
+    });
+    await this.requestStatusHistoryRepository.save(statusHistory);
+
+    return request;
+  }
+
+  
 
 }
