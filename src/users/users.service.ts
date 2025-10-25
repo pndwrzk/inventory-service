@@ -12,6 +12,7 @@ import { UserRole } from './user-role.enum';
 import { CreateUserDto } from './dto/create-user.dto';
 import { JwtService } from '@nestjs/jwt';
 import { LoginResponseDto } from './dto/login-response.dto';
+import { UserListResponseDto } from './dto/user-list-response.dto';
 
 @Injectable()
 export class UsersService {
@@ -66,7 +67,6 @@ export class UsersService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    
     const payload = { sub: user.id, username: user.username };
 
     const accessToken = this.jwtService.sign(payload, {
@@ -97,8 +97,28 @@ export class UsersService {
     };
   }
 
-
   async findById(id: string): Promise<User | null> {
     return await this.userRepo.findOne({ where: { id } });
   }
+  async getAll(): Promise<UserListResponseDto[]> {
+  const users = await this.userRepo.find({
+    relations: ['branch'],
+    order: { created_at: 'DESC' },
+  });
+  return users.map((user) => ({
+    id: user.id,
+    username: user.username,
+    full_name: user.full_name,
+    role: user.role,
+    branch: user.branch
+      ? {
+          id: user.branch.id,
+          name: user.branch.name,
+        }
+      : null,
+    created_at: user.created_at,
+    updated_at: user.updated_at,
+  }));
+}
+
 }

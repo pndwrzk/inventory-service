@@ -1,16 +1,19 @@
-import { Controller, Post, Body, HttpCode } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, Get, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { BaseResponse } from 'src/common/dto/base-response.dto';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { IdResponseDto } from 'src/common/dto/id-response.dto';
 import { LoginRequestDto } from './dto/login-request.dto';
 import { LoginResponseDto } from './dto/login-response.dto';
+import { UserListResponseDto } from './dto/user-list-response.dto';
+import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('auth')
 @Controller('auth')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
 
   @Post('register')
   @HttpCode(201)
@@ -24,10 +27,10 @@ export class UsersController {
     @Body() body: CreateUserDto,
   ): Promise<BaseResponse<IdResponseDto>> {
     const user = await this.usersService.create(body);
-
     return BaseResponse.Success(user, 'User registered successfully');
   }
 
+  // 🔹 Login
   @Post('login')
   @HttpCode(200)
   @ApiOperation({ summary: 'Login user and get tokens' })
@@ -44,5 +47,21 @@ export class UsersController {
       body.password,
     );
     return BaseResponse.Success(loginData, 'Login successful');
+  }
+
+
+  @Get('users')
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('jwt-access'))
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Get all users' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of all users',
+    type: [UserListResponseDto],
+  })
+  async getAll(): Promise<BaseResponse<UserListResponseDto[]>> {
+    const users = await this.usersService.getAll();
+    return BaseResponse.Success(users, 'Fetched all users successfully');
   }
 }
