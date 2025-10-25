@@ -9,6 +9,7 @@ import { Attachment } from '../attachments/attachments.entity';
 import { RequestStatusHistory } from '../request-status-history/request-status-history.entity';
 import { RequestStatus } from '../request-status-history/request-status.enum';
 import { Product } from 'src/products/products.entity';
+import { RequestResponseDto } from './dto/request-response.dto';
 
 @Injectable()
 export class RequestsService {
@@ -123,19 +124,53 @@ export class RequestsService {
       
       await queryRunner.manager.save(statusHistory);
       
-  console.log("before commit");
+
       await queryRunner.commitTransaction();
-        console.log("after commit");
+      
 
 
       return savedRequest;
     } catch (err) {
-      // 6️⃣ Rollback kalau ada error
+     
       await queryRunner.rollbackTransaction();
       throw err;
     } finally {
-      // 7️⃣ Tutup koneksi query runner
       await queryRunner.release();
     }
   }
+  async findAll(): Promise<RequestResponseDto[]> {
+  const requests = await this.requestRepository.find({
+    relations: ['items', 'items.product', 'attachments', 'statusHistories'],
+    order: {
+      created_at: 'DESC',
+      statusHistories: {
+        created_at: 'DESC', // urutkan status dari terbaru
+      },
+    },
+  });
+
+  return requests.map((req) => ({
+    id: req.id,
+    items: req.items?.map((item) => ({
+      id: item.id,
+      product_name: item.product?.name || 'Unknown Product',
+      quantity: item.quantity,
+    })),
+    attachments: req.attachments?.map((a) => ({
+      id: a.id,
+      file_path: a.file_path,
+    })),
+    status_histories: req.statusHistories?.map((s) => ({
+      id: s.id,
+      status: s.status,
+      remark: s.remark,
+      action_by: s.action_by,
+      created_at: s.created_at,
+    })),
+    created_at: req.created_at,
+    updated_at: req.updated_at,
+  }));
 }
+}
+
+

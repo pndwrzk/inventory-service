@@ -4,10 +4,12 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-
-
+import { RequestItem } from '../request-item/request-item.entity';
+import { Attachment } from '../attachments/attachments.entity';
+import { RequestStatusHistory } from '../request-status-history/request-status-history.entity';
 
 @Entity('requests')
 export class Request {
@@ -26,8 +28,18 @@ export class Request {
   @ApiProperty()
   @UpdateDateColumn()
   updated_at: Date;
+
+
+  @OneToMany(() => RequestItem, (item) => item.request, { cascade: true })
+  items: RequestItem[];
+
+
+  @OneToMany(() => Attachment, (attachment) => attachment.request, { cascade: true })
+  attachments: Attachment[];
+
+
+  @OneToMany(() => RequestStatusHistory, (history) => history.request, {
+    cascade: true,
+  })
+  statusHistories: RequestStatusHistory[];
 }
-
-
-
-
