@@ -12,7 +12,17 @@ import { BaseResponse } from './common/dto/base-response.dto';
 
 async function bootstrap() {
  
-  const app = await NestFactory.create(AppModule, { cors: true });
+  const app = await NestFactory.create(AppModule);
+
+app.enableCors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  credentials: false,
+  preflightContinue: false, // biar NestJS otomatis jawab preflight
+  optionsSuccessStatus: 204,
+});
+
 
   app.useGlobalInterceptors(new ResponseInterceptor());
   
