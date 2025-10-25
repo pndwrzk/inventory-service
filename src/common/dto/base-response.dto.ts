@@ -13,18 +13,30 @@ export class BaseResponse<T> {
   @ApiProperty()
   message: string;
 
-  
   @ApiProperty({ nullable: true, type: 'object', additionalProperties: true })
   data: T | null;
 
-  private constructor(status: ResponseStatus, message: string, data?: T) {
+  @ApiProperty({ nullable: true, type: 'object', additionalProperties: true })
+  meta?: {
+    page: number;
+    size: number;
+    total_page: number;
+  };
+
+  private constructor(
+    status: ResponseStatus,
+    message: string,
+    data?: T,
+    meta?: { page: number; size: number; total_page: number },
+  ) {
     this.status = status;
     this.message = message;
     this.data = data ?? null;
+    this.meta = meta;
   }
 
-  static Success<T>(data?: T, message = 'Operation successful') {
-    return new BaseResponse<T>(ResponseStatus.Success, message, data);
+  static Success<T>(data?: T, message = 'Operation successful', meta?: { page: number; size: number; total_page: number }) {
+    return new BaseResponse<T>(ResponseStatus.Success, message, data, meta);
   }
 
   static Fail(message: string, data?: any) {

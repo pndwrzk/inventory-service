@@ -10,6 +10,7 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import {
@@ -19,6 +20,7 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { RequestsService } from './requests.service';
 import { CreateRequestDto } from './dto/create-request.dto';
@@ -96,7 +98,16 @@ export class RequestsController {
       'Request created successfully',
     );
   }
+
   @Get()
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'size', required: false, type: Number, example: 10 })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    example: 'jakarta',
+  })
   @ApiOperation({
     summary: 'Get all requests with items, attachments, and status histories',
   })
@@ -105,9 +116,18 @@ export class RequestsController {
     description: 'List of requests',
     type: [RequestResponseDto],
   })
-  async findAll() {
-    const requests = await this.requestsService.findAll();
-    return BaseResponse.Success(requests, 'Requests retrieved successfully');
+  async findAll(@Query('page') page = 1, @Query('size') size = 10) {
+    const pageNumber = Number(page);
+    const pageSize = Number(size);
+    const { data, meta } = await this.requestsService.findAll(
+      pageNumber,
+      pageSize,
+    );
+    return BaseResponse.Success(data, 'Requests retrieved successfully', {
+      page: meta.page,
+      size: meta.size,
+      total_page: meta.totalPage,
+    });
   }
 
   @Patch(':id/approve')
@@ -160,7 +180,7 @@ export class RequestsController {
   }
 
   @Patch(':id/complete')
-  @UseInterceptors(FilesInterceptor('files', 5)) // ganti dari attachments ke files
+  @UseInterceptors(FilesInterceptor('files', 5))
   @ApiOperation({ summary: 'Complete a request' })
   @ApiConsumes('multipart/form-data')
   @ApiResponse({

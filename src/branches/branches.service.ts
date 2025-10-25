@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import { Branch } from './branch.entity';
 import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
@@ -16,10 +16,35 @@ export class BranchesService {
     const branch = this.branchRepo.create(dto);
     return await this.branchRepo.save(branch);
   }
+async findAll(
+  page: number,
+  size: number,
+  search?: string,
+): Promise<{ data: Branch[]; meta: { total: number; page: number; size: number; totalPage: number } }> {
+  const skip = (page - 1) * size;
 
-  async findAll(): Promise<Branch[]> {
-    return await this.branchRepo.find();
-  }
+ 
+  const where = search ? { name: ILike(`%${search}%`) } : {};
+
+  const [data, total] = await this.branchRepo.findAndCount({
+    where,
+    skip,
+    take: size,
+    order: { created_at: 'DESC' }, 
+  });
+
+  const totalPage = Math.ceil(total / size);
+
+  return {
+    data,
+    meta: {
+      total,
+      page,
+      size,
+      totalPage,
+    },
+  };
+}
 
   async findOne(id: string): Promise<Branch | null> {
     const branch = await this.branchRepo.findOne({ where: { id } });
