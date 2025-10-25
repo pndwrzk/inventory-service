@@ -56,4 +56,7 @@ export class RequestResponseDto {
 
   @ApiProperty()
   updated_at: Date;
+
+   @ApiProperty()
+  current_status: string;
 }
