@@ -40,54 +40,65 @@ export class RequestsService {
     await queryRunner.startTransaction();
 
     try {
+    
       const request = queryRunner.manager.create(Request, {
         pickup_schedule: null,
       });
       const savedRequest = await queryRunner.manager.save(request);
 
-      const arrItems = JSON.parse(dto.items);
-      if (arrItems.length) {
-        const items = arrItems.map(async (item) => {
-          const itemExist = await this.productRepository.findOne({
-            where: { id: item.product_id },
-          });
-          if (!itemExist) {
-            throw new BadRequestException(
-              `Product with id ${item.product_id} not found`,
-            );
-          }
+      
+      const arrItems = JSON.parse(dto.items || '[]');
 
-          if (item.quantity <= 0) {
-            throw new BadRequestException(
-              `Quantity for product ${itemExist.name} must be greater than zero`,
-            );
-          }
+      if (arrItems.length > 0) {
+        const items = await Promise.all(
+          arrItems.map(async (item) => {
+            const product = await this.productRepository.findOne({
+              where: { id: item.product_id },
+            });
+            if (!product) {
+              throw new BadRequestException(
+                `Product with id ${item.product_id} not found`,
+              );
+            }
 
-          if (item.quantity > itemExist.stock) {
-            throw new BadRequestException(
-              `Quantity for product ${itemExist.name} exceeds available stock`,
-            );
-          }
+            if (item.quantity <= 0) {
+              throw new BadRequestException(
+                `Quantity for product ${product.name} must be greater than zero`,
+              );
+            }
 
-          return queryRunner.manager.create(RequestItem, {
-            request: savedRequest,
-            product: { id: item.product_id } as any,
-            quantity: item.quantity,
-          });
-        });
+            if (item.quantity > product.stock) {
+              throw new BadRequestException(
+                `Quantity for product ${product.name} exceeds available stock`,
+              );
+            }
+
+          
+
+            return queryRunner.manager.create(RequestItem, {
+              request: savedRequest,
+              product: { id: item.product_id } as Product,
+              quantity: item.quantity,
+            });
+          }),
+        );
+
         await queryRunner.manager.save(items);
       }
 
-      if (files?.length) {
+ 
+      if (files?.length > 0) {
         const uploadDir = path.join(process.cwd(), 'uploads/attachments');
-        if (!fs.existsSync(uploadDir))
+        if (!fs.existsSync(uploadDir)) {
           fs.mkdirSync(uploadDir, { recursive: true });
+        }
 
         const attachments = files.map((file) => {
-          if (!file.buffer)
+          if (!file.buffer) {
             throw new BadRequestException(
               `${file.originalname} tidak ada buffer`,
             );
+          }
 
           const filename = `${Date.now()}-${file.originalname}`;
           const filePath = path.join(uploadDir, filename);
@@ -102,21 +113,28 @@ export class RequestsService {
         await queryRunner.manager.save(attachments);
       }
 
+      // 4️⃣ Simpan status awal request
       const statusHistory = queryRunner.manager.create(RequestStatusHistory, {
         action_by: userId,
         status: RequestStatus.PENDING,
         remark: dto.remarks || null,
         request: savedRequest,
       });
+      
       await queryRunner.manager.save(statusHistory);
-
+      
+  console.log("before commit");
       await queryRunner.commitTransaction();
+        console.log("after commit");
+
 
       return savedRequest;
     } catch (err) {
+      // 6️⃣ Rollback kalau ada error
       await queryRunner.rollbackTransaction();
       throw err;
     } finally {
+      // 7️⃣ Tutup koneksi query runner
       await queryRunner.release();
     }
   }

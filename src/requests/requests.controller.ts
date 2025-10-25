@@ -38,16 +38,38 @@ export class RequestsController {
   @ApiConsumes('multipart/form-data')
   @ApiResponse({ status: 201, description: 'Request created successfully', type: IdResponseDto })
   @ApiOperation({ summary: 'Create new request' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        files: { type: 'array', items: { type: 'string', format: 'binary' } },
-        items: { type: 'array', items: { type: 'object' } }, 
-        remarks: { type: 'string' },
+@ApiBody({
+  schema: {
+    type: 'object',
+    properties: {
+      files: {
+        type: 'array',
+        items: { type: 'string', format: 'binary' },
+      },
+      items: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            product_id: { type: 'string', example: 'SKU-001' },
+            quantity: { type: 'integer', example: 5 },
+          },
+          required: ['product_id', 'quantity'],
+        },
+        example: [
+          { product_id: 'SKU-001', quantity: 5 },
+          { product_id: 'SKU-002', quantity: 3 },
+        ],
+      },
+      remarks: {
+        type: 'string',
+        example: 'Urgent pickup request',
       },
     },
-  })
+  },
+})
+
+
   async create(
     @Body() dto: any,
     @UploadedFiles() files: Express.Multer.File[],
