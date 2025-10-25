@@ -11,9 +11,11 @@ import {
 import { BaseResponse } from './common/dto/base-response.dto';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+ 
+  const app = await NestFactory.create(AppModule, { cors: true });
 
   app.useGlobalInterceptors(new ResponseInterceptor());
+  
 
   app.useGlobalPipes(
     new ValidationPipe({
