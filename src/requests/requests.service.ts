@@ -305,21 +305,22 @@ async deleteRequest(requestId: string): Promise<{ requestId: string }> {
 
   try {
     
-    for (const statusHistory of request.statusHistories) {
-      for (const attachment of statusHistory.attachments || []) {
-        const filePath = path.join(process.cwd(), attachment.file_path);
-        if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath); 
-        }
-      }
+for (const statusHistory of request.statusHistories) {
 
-          await queryRunner.manager.delete(RequestStatusHistory, {
-      request: { id: request.id },
-    });
-      await queryRunner.manager.delete(Attachment, {
-        requestStatusHistory: { id: statusHistory.id },
-      });
-    }
+  for (const attachment of statusHistory.attachments || []) {
+    const filePath = path.join(process.cwd(), attachment.file_path);
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+  }
+
+  
+  await queryRunner.manager.delete(Attachment, {
+    requestStatusHistory: { id: statusHistory.id },
+  });
+
+
+  await queryRunner.manager.delete(RequestStatusHistory, { id: statusHistory.id });
+}
+
 
    
 
