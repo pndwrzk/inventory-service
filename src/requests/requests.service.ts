@@ -289,6 +289,59 @@ export class RequestsService {
   }
 }
 
+async deleteRequest(requestId: string): Promise<{ requestId: string }> {
+  const request = await this.requestRepository.findOne({
+    where: { id: requestId },
+    relations: ['items', 'statusHistories', 'statusHistories.attachments'],
+  });
+
+  if (!request) {
+    throw new NotFoundException(`Request with id ${requestId} not found`);
+  }
+
+  const queryRunner = this.requestRepository.manager.connection.createQueryRunner();
+  await queryRunner.connect();
+  await queryRunner.startTransaction();
+
+  try {
+    
+    for (const statusHistory of request.statusHistories) {
+      for (const attachment of statusHistory.attachments || []) {
+        const filePath = path.join(process.cwd(), attachment.file_path);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath); 
+        }
+      }
+      await queryRunner.manager.delete(Attachment, {
+        requestStatusHistory: { id: statusHistory.id },
+      });
+    }
+
+   
+    await queryRunner.manager.delete(RequestStatusHistory, {
+      request: { id: request.id },
+    });
+
+   
+    await queryRunner.manager.delete(RequestItem, {
+      request: { id: request.id },
+    });
+
+
+    await queryRunner.manager.delete(Request, { id: request.id });
+
+    await queryRunner.commitTransaction();
+
+    return { requestId };
+  } catch (err) {
+    await queryRunner.rollbackTransaction();
+    throw err;
+  } finally {
+    await queryRunner.release();
+  }
+}
+
+
 
   
 

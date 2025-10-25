@@ -9,6 +9,7 @@ import {
   Get,
   Patch,
   Param,
+  Delete,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import {
@@ -28,7 +29,11 @@ import { IdResponseDto } from 'src/common/dto/id-response.dto';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { UserRole } from '../users/user-role.enum';
 import { RequestResponseDto } from './dto/request-response.dto';
-import { ApproveStatusDto, CompleteRequestDto, RejectStatusDto } from './dto/update-status.dto';
+import {
+  ApproveStatusDto,
+  CompleteRequestDto,
+  RejectStatusDto,
+} from './dto/update-status.dto';
 
 @ApiTags('requests')
 @Roles(UserRole.STAFF)
@@ -41,46 +46,47 @@ export class RequestsController {
   @Post()
   @UseInterceptors(FilesInterceptor('files', 5))
   @ApiConsumes('multipart/form-data')
-  @ApiResponse({ status: 201, description: 'Request created successfully', type: IdResponseDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Request created successfully',
+    type: IdResponseDto,
+  })
   @ApiOperation({ summary: 'Create new request' })
-@ApiBody({
-  schema: {
-    type: 'object',
-    properties: {
-      files: {
-        type: 'array',
-        items: { type: 'string', format: 'binary' },
-      },
-      items: {
-        type: 'array',
-        items: {
-          type: 'object',
-          properties: {
-            product_id: { type: 'string', example: 'SKU-001' },
-            quantity: { type: 'integer', example: 5 },
-          },
-          required: ['product_id', 'quantity'],
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        files: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
         },
-        example: [
-          { product_id: 'SKU-001', quantity: 5 },
-          { product_id: 'SKU-002', quantity: 3 },
-        ],
-      },
-      remarks: {
-        type: 'string',
-        example: 'Urgent pickup request',
+        items: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              product_id: { type: 'string', example: 'SKU-001' },
+              quantity: { type: 'integer', example: 5 },
+            },
+            required: ['product_id', 'quantity'],
+          },
+          example: [
+            { product_id: 'SKU-001', quantity: 5 },
+            { product_id: 'SKU-002', quantity: 3 },
+          ],
+        },
+        remarks: {
+          type: 'string',
+          example: 'Urgent pickup request',
+        },
       },
     },
-  },
-})
-
-
+  })
   async create(
     @Body() dto: any,
     @UploadedFiles() files: Express.Multer.File[],
     @Req() req: { user: JwtUser },
   ) {
-    
     const userId = req.user.userId;
 
     const request = await this.requestsService.create(dto, files, userId);
@@ -90,9 +96,15 @@ export class RequestsController {
       'Request created successfully',
     );
   }
-    @Get()
-  @ApiOperation({ summary: 'Get all requests with items, attachments, and status histories' })
-  @ApiResponse({ status: 200, description: 'List of requests', type: [RequestResponseDto] })
+  @Get()
+  @ApiOperation({
+    summary: 'Get all requests with items, attachments, and status histories',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of requests',
+    type: [RequestResponseDto],
+  })
   async findAll() {
     const requests = await this.requestsService.findAll();
     return BaseResponse.Success(requests, 'Requests retrieved successfully');
@@ -100,8 +112,12 @@ export class RequestsController {
 
   @Patch(':id/approve')
   @ApiOperation({ summary: 'Approve a request' })
-  @ApiResponse({ status: 200, description: 'Request approved', type: IdResponseDto })
-  @ApiBody({ type: ApproveStatusDto }) 
+  @ApiResponse({
+    status: 200,
+    description: 'Request approved',
+    type: IdResponseDto,
+  })
+  @ApiBody({ type: ApproveStatusDto })
   async approve(
     @Param('id') id: string,
     @Body() dto: ApproveStatusDto,
@@ -113,14 +129,20 @@ export class RequestsController {
       dto.pickup_schedule,
       dto.remark,
     );
-    return BaseResponse.Success({ id: request.id }, 'Request approved successfully');
+    return BaseResponse.Success(
+      { id: request.id },
+      'Request approved successfully',
+    );
   }
 
- 
   @Patch(':id/reject')
   @ApiOperation({ summary: 'Reject a request' })
-  @ApiResponse({ status: 200, description: 'Request rejected', type: IdResponseDto })
-  @ApiBody({ type: RejectStatusDto }) 
+  @ApiResponse({
+    status: 200,
+    description: 'Request rejected',
+    type: IdResponseDto,
+  })
+  @ApiBody({ type: RejectStatusDto })
   async reject(
     @Param('id') id: string,
     @Body() dto: RejectStatusDto,
@@ -131,52 +153,62 @@ export class RequestsController {
       req.user.userId,
       dto.remark,
     );
-    return BaseResponse.Success({ id: request.id }, 'Request rejected successfully');
+    return BaseResponse.Success(
+      { id: request.id },
+      'Request rejected successfully',
+    );
   }
 
-@Patch(':id/complete')
-@UseInterceptors(FilesInterceptor('files', 5)) // ganti dari attachments ke files
-@ApiOperation({ summary: 'Complete a request' })
-@ApiConsumes('multipart/form-data')
-@ApiResponse({ status: 200, description: 'Request completed', type: IdResponseDto })
-@ApiBody({
-  schema: {
-    type: 'object',
-    properties: {
-      files: { 
-        type: 'array',
-        items: { type: 'string', format: 'binary' },
-      },
-      remarks: {
-        type: 'string',
-        example: 'Final submission',
+  @Patch(':id/complete')
+  @UseInterceptors(FilesInterceptor('files', 5)) // ganti dari attachments ke files
+  @ApiOperation({ summary: 'Complete a request' })
+  @ApiConsumes('multipart/form-data')
+  @ApiResponse({
+    status: 200,
+    description: 'Request completed',
+    type: IdResponseDto,
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        files: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+        },
+        remarks: {
+          type: 'string',
+          example: 'Final submission',
+        },
       },
     },
-  },
-})
-async complete(
-  @Param('id') id: string,
-  @UploadedFiles() files: Express.Multer.File[],
-   @Body() dto: any,
-  @Req() req: { user: JwtUser },
-) {
-  const request = await this.requestsService.completeRequest(
-    id,
-    req.user.userId,
-    files,
-    dto,
-  );
+  })
+  async complete(
+    @Param('id') id: string,
+    @UploadedFiles() files: Express.Multer.File[],
+    @Body() dto: any,
+    @Req() req: { user: JwtUser },
+  ) {
+    const request = await this.requestsService.completeRequest(
+      id,
+      req.user.userId,
+      files,
+      dto,
+    );
 
-  return BaseResponse.Success(
-    { id: request.id },
-    'Request completed successfully',
-  );
+    return BaseResponse.Success(
+      { id: request.id },
+      'Request completed successfully',
+    );
+  }
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete a request' })
+  @ApiResponse({ status: 200, description: 'Request deleted successfully' })
+  async delete(@Param('id') id: string) {
+    const result = await this.requestsService.deleteRequest(id);
+    return BaseResponse.Success(
+      { id: result.requestId },
+      'Request deleted successfully',
+    );
+  }
 }
-
-}
-
-
-
-
-
-
