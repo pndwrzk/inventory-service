@@ -312,15 +312,17 @@ async deleteRequest(requestId: string): Promise<{ requestId: string }> {
           fs.unlinkSync(filePath); 
         }
       }
+
+          await queryRunner.manager.delete(RequestStatusHistory, {
+      request: { id: request.id },
+    });
       await queryRunner.manager.delete(Attachment, {
         requestStatusHistory: { id: statusHistory.id },
       });
     }
 
    
-    await queryRunner.manager.delete(RequestStatusHistory, {
-      request: { id: request.id },
-    });
+
 
    
     await queryRunner.manager.delete(RequestItem, {
