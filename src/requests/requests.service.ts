@@ -41,53 +41,49 @@ export class RequestsService {
     await queryRunner.startTransaction();
 
     try {
-    
       const request = queryRunner.manager.create(Request, {
         pickup_schedule: null,
       });
       const savedRequest = await queryRunner.manager.save(request);
 
-      
       const arrItems = JSON.parse(dto.items || '[]');
-
-      if (arrItems.length > 0) {
-        const items = await Promise.all(
-          arrItems.map(async (item) => {
-            const product = await this.productRepository.findOne({
-              where: { id: item.product_id },
-            });
-            if (!product) {
-              throw new BadRequestException(
-                `Product with id ${item.product_id} not found`,
-              );
-            }
-
-            if (item.quantity <= 0) {
-              throw new BadRequestException(
-                `Quantity for product ${product.name} must be greater than zero`,
-              );
-            }
-
-            if (item.quantity > product.stock) {
-              throw new BadRequestException(
-                `Quantity for product ${product.name} exceeds available stock`,
-              );
-            }
-
-          
-
-            return queryRunner.manager.create(RequestItem, {
-              request: savedRequest,
-              product: { id: item.product_id } as Product,
-              quantity: item.quantity,
-            });
-          }),
-        );
-
-        await queryRunner.manager.save(items);
+      if (!arrItems.length) {
+        throw new BadRequestException(`Items is required`);
       }
 
- 
+      const items = await Promise.all(
+        arrItems.map(async (item) => {
+          const product = await this.productRepository.findOne({
+            where: { id: item.product_id },
+          });
+          if (!product) {
+            throw new BadRequestException(
+              `Product with id ${item.product_id} not found`,
+            );
+          }
+
+          if (item.quantity <= 0) {
+            throw new BadRequestException(
+              `Quantity for product ${product.name} must be greater than zero`,
+            );
+          }
+
+          if (item.quantity > product.stock) {
+            throw new BadRequestException(
+              `Quantity for product ${product.name} exceeds available stock`,
+            );
+          }
+
+          return queryRunner.manager.create(RequestItem, {
+            request: savedRequest,
+            product: { id: item.product_id } as Product,
+            quantity: item.quantity,
+          });
+        }),
+      );
+
+      await queryRunner.manager.save(items);
+
       if (files?.length > 0) {
         const uploadDir = path.join(process.cwd(), 'uploads/attachments');
         if (!fs.existsSync(uploadDir)) {
@@ -114,24 +110,19 @@ export class RequestsService {
         await queryRunner.manager.save(attachments);
       }
 
-      // 4️⃣ Simpan status awal request
       const statusHistory = queryRunner.manager.create(RequestStatusHistory, {
         action_by: userId,
         status: RequestStatus.PENDING,
         remark: dto.remarks || null,
         request: savedRequest,
       });
-      
+
       await queryRunner.manager.save(statusHistory);
-      
 
       await queryRunner.commitTransaction();
-      
-
 
       return savedRequest;
     } catch (err) {
-     
       await queryRunner.rollbackTransaction();
       throw err;
     } finally {
@@ -139,38 +130,36 @@ export class RequestsService {
     }
   }
   async findAll(): Promise<RequestResponseDto[]> {
-  const requests = await this.requestRepository.find({
-    relations: ['items', 'items.product', 'attachments', 'statusHistories'],
-    order: {
-      created_at: 'DESC',
-      statusHistories: {
-        created_at: 'DESC', // urutkan status dari terbaru
+    const requests = await this.requestRepository.find({
+      relations: ['items', 'items.product', 'attachments', 'statusHistories'],
+      order: {
+        created_at: 'DESC',
+        statusHistories: {
+          created_at: 'DESC',
+        },
       },
-    },
-  });
+    });
 
-  return requests.map((req) => ({
-    id: req.id,
-    items: req.items?.map((item) => ({
-      id: item.id,
-      product_name: item.product?.name || 'Unknown Product',
-      quantity: item.quantity,
-    })),
-    attachments: req.attachments?.map((a) => ({
-      id: a.id,
-      file_path: a.file_path,
-    })),
-    status_histories: req.statusHistories?.map((s) => ({
-      id: s.id,
-      status: s.status,
-      remark: s.remark,
-      action_by: s.action_by,
-      created_at: s.created_at,
-    })),
-    created_at: req.created_at,
-    updated_at: req.updated_at,
-  }));
+    return requests.map((req) => ({
+      id: req.id,
+      items: req.items?.map((item) => ({
+        id: item.id,
+        product_name: item.product?.name || 'Unknown Product',
+        quantity: item.quantity,
+      })),
+      attachments: req.attachments?.map((a) => ({
+        id: a.id,
+        file_path: a.file_path,
+      })),
+      status_histories: req.statusHistories?.map((s) => ({
+        id: s.id,
+        status: s.status,
+        remark: s.remark,
+        action_by: s.action_by,
+        created_at: s.created_at,
+      })),
+      created_at: req.created_at,
+      updated_at: req.updated_at,
+    }));
+  }
 }
-}
-
-
