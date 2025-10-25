@@ -134,7 +134,7 @@ export class RequestsController {
     return BaseResponse.Success({ id: request.id }, 'Request rejected successfully');
   }
 
-  @Patch(':id/complete')
+@Patch(':id/complete')
 @UseInterceptors(FilesInterceptor('files', 5)) // ganti dari attachments ke files
 @ApiOperation({ summary: 'Complete a request' })
 @ApiConsumes('multipart/form-data')
@@ -157,14 +157,14 @@ export class RequestsController {
 async complete(
   @Param('id') id: string,
   @UploadedFiles() files: Express.Multer.File[],
-  @Body() body: CompleteRequestDto,
+   @Body() dto: any,
   @Req() req: { user: JwtUser },
 ) {
   const request = await this.requestsService.completeRequest(
     id,
     req.user.userId,
     files,
-    body.remarks,
+    dto,
   );
 
   return BaseResponse.Success(

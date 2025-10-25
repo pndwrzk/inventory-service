@@ -56,7 +56,7 @@ export class RequestsService {
           const product = await this.productRepository.findOne({
             where: { id: item.product_id },
           });
-          
+
          if (!product) {
           throw new BadRequestException(
             `Product with id ${item.product_id} not found`,
@@ -226,7 +226,7 @@ export class RequestsService {
   requestId: string,
   userId: string,
   files: Express.Multer.File[],
-  remarks?: string,
+ dto: any,
 ): Promise<Request> {
   const request = await this.requestRepository.findOne({
     where: { id: requestId },
@@ -246,7 +246,7 @@ export class RequestsService {
     const statusHistory = queryRunner.manager.create(RequestStatusHistory, {
       action_by: userId,
       status: RequestStatus.COMPLETED,
-      remark: remarks || null,
+      remark: dto.remarks || null,
       request: request,
     });
 
