@@ -56,12 +56,24 @@ export class RequestsService {
           const product = await this.productRepository.findOne({
             where: { id: item.product_id },
           });
-          if (!product) {
-            throw new BadRequestException(
-              `Product with id ${item.product_id} not found`,
-            );
-          }
+          
+         if (!product) {
+          throw new BadRequestException(
+            `Product with id ${item.product_id} not found`,
+          );
+        }
 
+        if (product.stock <= 0) {
+          throw new BadRequestException(
+            `Product with id ${item.product_id} is out of stock`,
+          );
+        }
+
+        if (item.quantity > product.stock) {
+          throw new BadRequestException(
+            `Requested quantity (${item.quantity}) for product id ${item.product_id} exceeds available stock (${product.stock})`,
+          );
+        }
 
           return queryRunner.manager.create(RequestItem, {
             request: savedRequest,
