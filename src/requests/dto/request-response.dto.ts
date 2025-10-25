@@ -30,6 +30,9 @@ export class StatusHistoryDto {
   @ApiProperty({ required: false, nullable: true })
   remark: string | null;
 
+@ApiProperty({ type: [AttachmentDto] })
+  attachments: AttachmentDto[];
+
   @ApiProperty()
   action_by: string;
 
@@ -45,8 +48,7 @@ export class RequestResponseDto {
   @ApiProperty({ type: [RequestItemDto] })
   items: RequestItemDto[];
 
-  @ApiProperty({ type: [AttachmentDto] })
-  attachments: AttachmentDto[];
+
 
   @ApiProperty({ type: [StatusHistoryDto] })
   status_histories: StatusHistoryDto[];

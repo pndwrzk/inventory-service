@@ -102,6 +102,7 @@ export class RequestsService {
           return queryRunner.manager.create(Attachment, {
             request: savedRequest,
             file_path: path.join('uploads/attachments', filename),
+            requestStatusHistory : statusHistory
           });
         });
 
@@ -122,7 +123,7 @@ export class RequestsService {
   }
   async findAll(): Promise<RequestResponseDto[]> {
     const requests = await this.requestRepository.find({
-      relations: ['items', 'items.product', 'attachments', 'statusHistories'],
+      relations: ['items', 'items.product', 'statusHistories.attachments', 'statusHistories'],
       order: {
         created_at: 'DESC',
         statusHistories: {
@@ -139,16 +140,17 @@ export class RequestsService {
         product_name: item.product?.name || 'Unknown Product',
         quantity: item.quantity,
       })),
-      attachments: req.attachments?.map((a) => ({
-        id: a.id,
-        file_path: `${process.env.APP_URL}/${ a.file_path}`,
-      })),
+     
       status_histories: req.statusHistories?.map((s) => ({
         id: s.id,
         status: s.status,
         remark: s.remark,
         action_by: s.action_by,
         created_at: s.created_at,
+        attachments: s.attachments?.map((a) => ({
+        id: a.id,
+        file_path: `${process.env.APP_URL}/${ a.file_path}`,
+      })),
       })),
       created_at: req.created_at,
       updated_at: req.updated_at,
