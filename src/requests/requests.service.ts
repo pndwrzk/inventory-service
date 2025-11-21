@@ -43,6 +43,7 @@ export class RequestsService {
     try {
       const request = queryRunner.manager.create(Request, {
         pickup_schedule: null,
+        created_by: { id: userId }
       });
       const savedRequest = await queryRunner.manager.save(request);
 
@@ -136,20 +137,31 @@ export class RequestsService {
 async findAll(
   page: number,
   size: number,
+  userId : string
 ): Promise<{ data: RequestResponseDto[]; meta: { total: number; page: number; size: number; totalPage: number } }> {
   const skip = (page - 1) * size;
 
   const [requests, total] = await this.requestRepository.findAndCount({
-    relations: ['items', 'items.product', 'statusHistories.attachments', 'statusHistories','statusHistories.user'],
-    order: {
+  where: {
+    created_by: { id: userId },
+  },
+  relations: [
+    'items',
+    'items.product',
+    'statusHistories.attachments',
+    'statusHistories',
+    'statusHistories.user',
+  ],
+  order: {
+    created_at: 'DESC',
+    statusHistories: {
       created_at: 'DESC',
-      statusHistories: {
-        created_at: 'DESC',
-      },
     },
-    skip,
-    take: size,
-  });
+  },
+  skip,
+  take: size,
+});
+
 
   const totalPage = Math.ceil(total / size);
 

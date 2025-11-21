@@ -116,12 +116,14 @@ export class RequestsController {
     description: 'List of requests',
     type: [RequestResponseDto],
   })
-  async findAll(@Query('page') page = 1, @Query('size') size = 10) {
+  async findAll(@Query('page') page = 1, @Query('size') size = 10, @Req() req: { user: JwtUser }) {
+     const userId = req.user.userId;
     const pageNumber = Number(page);
     const pageSize = Number(size);
     const { data, meta } = await this.requestsService.findAll(
       pageNumber,
       pageSize,
+      userId
     );
     return BaseResponse.Success(data, 'Requests retrieved successfully', {
       page: meta.page,
