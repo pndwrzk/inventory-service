@@ -22,19 +22,17 @@ export class UsersService {
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     @InjectRepository(Branch)
-        private readonly branchRepository: Repository<Branch>,
+    private readonly branchRepository: Repository<Branch>,
     private readonly jwtService: JwtService,
   ) {}
 
   async create(data: CreateUserDto): Promise<IdResponseDto> {
-   
     const existing = await this.userRepo.findOne({
       where: { username: data.username },
     });
     if (existing) {
       throw new BadRequestException('Username already exists');
     }
-
 
     if (data.role === UserRole.BRANCH && !data.branch_id) {
       throw new BadRequestException('branch_id is required for role "branch"');
@@ -49,13 +47,14 @@ export class UsersService {
       );
     }
 
-
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(data.password, saltRounds);
 
-    let branch : Branch | null = null;
+    let branch: Branch | null = null;
     if (data.branch_id) {
-      branch = await this.branchRepository.findOne({ where: { id: data.branch_id } });
+      branch = await this.branchRepository.findOne({
+        where: { id: data.branch_id },
+      });
       if (!branch) {
         throw new BadRequestException('branch not found');
       }
@@ -72,7 +71,10 @@ export class UsersService {
   }
 
   async login(username: string, password: string): Promise<LoginResponseDto> {
-    const user = await this.userRepo.findOne({ where: { username } });
+    const user = await this.userRepo.findOne({
+      where: { username },
+      relations: ['branch'],
+    });
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -102,8 +104,15 @@ export class UsersService {
         id: user.id,
         username: user.username,
         full_name: user.full_name,
-        role : user.role
+        role: user.role,
+        branch: user.branch
+        ? {
+            id: user.branch.id,
+            name: user.branch.name,
+          }
+        : null,
       },
+
       tokens: {
         access_token: accessToken,
         access_token_expired: accessTokenExp,
@@ -117,64 +126,60 @@ export class UsersService {
     return await this.userRepo.findOne({ where: { id } });
   }
   async getAll(): Promise<UserListResponseDto[]> {
-  const users = await this.userRepo.find({
-    relations: ['branch'],
-    order: { created_at: 'DESC' },
-  });
-  return users.map((user) => ({
-    id: user.id,
-    username: user.username,
-    full_name: user.full_name,
-    role: user.role,
-    branch: user.branch
-      ? {
-          id: user.branch.id,
-          name: user.branch.name,
-        }
-      : null,
-    created_at: user.created_at,
-    updated_at: user.updated_at,
-  }));
-}
-
-async refreshToken(refreshToken: string): Promise<TokenResponseDto> {
-  if (!refreshToken) {
-    throw new UnauthorizedException('Missing refresh token');
+    const users = await this.userRepo.find({
+      relations: ['branch'],
+      order: { created_at: 'DESC' },
+    });
+    return users.map((user) => ({
+      id: user.id,
+      username: user.username,
+      full_name: user.full_name,
+      role: user.role,
+      branch: user.branch
+        ? {
+            id: user.branch.id,
+            name: user.branch.name,
+          }
+        : null,
+      created_at: user.created_at,
+      updated_at: user.updated_at,
+    }));
   }
 
-  try {
-    const payload = this.jwtService.verify(refreshToken, {
-      secret: process.env.JWT_REFRESH_SECRET,
-    });
-
-    const user = await this.userRepo.findOne({ where: { id: payload.sub } });
-
-    if (!user) {
-      throw new UnauthorizedException('User not found');
+  async refreshToken(refreshToken: string): Promise<TokenResponseDto> {
+    if (!refreshToken) {
+      throw new UnauthorizedException('Missing refresh token');
     }
 
-    const newPayload = { sub: user.id, username: user.username };
+    try {
+      const payload = this.jwtService.verify(refreshToken, {
+        secret: process.env.JWT_REFRESH_SECRET,
+      });
 
-    const accessToken = this.jwtService.sign(newPayload, {
-      secret: process.env.JWT_ACCESS_SECRET,
-      expiresIn: '1h',
-    });
+      const user = await this.userRepo.findOne({ where: { id: payload.sub } });
 
-    const refreshTokenExp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30;
-    const accessTokenExp = Math.floor(Date.now() / 1000) + 60 * 60;
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
 
-    return {
-     
+      const newPayload = { sub: user.id, username: user.username };
+
+      const accessToken = this.jwtService.sign(newPayload, {
+        secret: process.env.JWT_ACCESS_SECRET,
+        expiresIn: '1h',
+      });
+
+      const refreshTokenExp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30;
+      const accessTokenExp = Math.floor(Date.now() / 1000) + 60 * 60;
+
+      return {
         access_token: accessToken,
         access_token_expired: accessTokenExp,
         refresh_token: refreshToken,
         refresh_token_expired: refreshTokenExp,
-    
-    };
-  } catch (err) {
-    throw new UnauthorizedException('Invalid or expired refresh token');
+      };
+    } catch (err) {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
   }
-}
-
-
 }
