@@ -32,6 +32,11 @@ export class Request {
   @UpdateDateColumn()
   updated_at: Date;
 
+ @ApiProperty()
+  @Column({ unique: true })
+  code: string;
+
+
   @ApiProperty({ required: false, nullable: true })
   @ManyToOne(() => User, { eager: false, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'created_by' })

@@ -40,8 +40,6 @@ export class RequestsService {
     userId: string,
   ): Promise<Request> {
 
-    console.log("request", dto);
-     console.log("files",  files);
     const queryRunner =
       this.requestRepository.manager.connection.createQueryRunner();
     await queryRunner.connect();
@@ -49,9 +47,11 @@ export class RequestsService {
 
 
     try {
+   
       const request = queryRunner.manager.create(Request, {
         pickup_schedule: null,
         created_by: { id: userId },
+        code :this.generateRequestCode()
       });
       const savedRequest = await queryRunner.manager.save(request);
 
@@ -390,4 +390,15 @@ export class RequestsService {
       await queryRunner.release();
     }
   }
+
+private generateRequestCode(length = 12): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const now = Date.now().toString(36);
+  let code = now;
+  while (code.length < length) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return code.slice(0, length);
+}
+
 }
