@@ -24,6 +24,7 @@ export class UsersService {
   ) {}
 
   async create(data: CreateUserDto): Promise<IdResponseDto> {
+    console.log(data);
     const existing = await this.userRepo.findOne({
       where: { username: data.username },
     });
@@ -35,6 +36,7 @@ export class UsersService {
     if (data.role === UserRole.BRANCH && !data.branch_id) {
       throw new BadRequestException('branch_id is required for role "branch"');
     }
+
     if (
       (data.role === UserRole.STAFF || data.role === UserRole.SUPERVISOR) &&
       data.branch_id
