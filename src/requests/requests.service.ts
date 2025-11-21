@@ -13,8 +13,13 @@ import { Attachment } from '../attachments/attachments.entity';
 import { RequestStatusHistory } from '../request-status-history/request-status-history.entity';
 import { RequestStatus } from '../request-status-history/request-status.enum';
 import { Product } from 'src/products/products.entity';
-import { RequestResponseDto, RequestResponseErrorItemDTO } from './dto/request-response.dto';
+import {
+  RequestResponseDto,
+  RequestResponseErrorItemDTO,
+} from './dto/request-response.dto';
 import { v4 as uuidv4 } from 'uuid';
+import { User } from 'src/users/user.entity';
+import { UserRole } from 'src/users/user-role.enum';
 
 @Injectable()
 export class RequestsService {
@@ -25,8 +30,8 @@ export class RequestsService {
     @InjectRepository(RequestItem)
     private readonly requestItemRepository: Repository<RequestItem>,
 
-    @InjectRepository(Attachment)
-    private readonly attachmentRepository: Repository<Attachment>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
 
     @InjectRepository(RequestStatusHistory)
     private readonly requestStatusHistoryRepository: Repository<RequestStatusHistory>,
@@ -40,19 +45,16 @@ export class RequestsService {
     files: Express.Multer.File[],
     userId: string,
   ): Promise<Request> {
-
     const queryRunner =
       this.requestRepository.manager.connection.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
-
     try {
-   
       const request = queryRunner.manager.create(Request, {
         pickup_schedule: null,
         created_by: { id: userId },
-        code :this.generateRequestCode()
+        code: this.generateRequestCode(),
       });
       const savedRequest = await queryRunner.manager.save(request);
 
@@ -165,9 +167,18 @@ export class RequestsService {
   }> {
     const skip = (page - 1) * size;
 
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User Not Found`);
+    }
+
+
     const [requests, total] = await this.requestRepository.findAndCount({
       where: {
-        created_by: { id: userId },
+        created_by: user.role === UserRole.BRANCH ? { id: userId } : {},
       },
       relations: [
         'items',
@@ -190,7 +201,7 @@ export class RequestsService {
 
     const data = requests.map((req) => ({
       id: req.id,
-      code : req.code, 
+      code: req.code,
       current_status: req.statusHistories?.[0]?.status || 'Unknown',
       pickup_schedule: req.pickup_schedule || null,
       items: req.items?.map((item) => ({
@@ -393,14 +404,14 @@ export class RequestsService {
     }
   }
 
-private generateRequestCode(length = 12): string {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  const now = Date.now().toString(36);
-  let code = now;
-  while (code.length < length) {
-    code += chars[Math.floor(Math.random() * chars.length)];
+  private generateRequestCode(length = 18): string {
+    const chars =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const now = Date.now().toString(36);
+    let code = now;
+    while (code.length < length) {
+      code += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return code.slice(0, length);
   }
-  return code.slice(0, length);
-}
-
 }
