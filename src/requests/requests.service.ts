@@ -13,7 +13,7 @@ import { Attachment } from '../attachments/attachments.entity';
 import { RequestStatusHistory } from '../request-status-history/request-status-history.entity';
 import { RequestStatus } from '../request-status-history/request-status.enum';
 import { Product } from 'src/products/products.entity';
-import { RequestResponseDto } from './dto/request-response.dto';
+import { RequestResponseDto, RequestResponseErrorItemDTO } from './dto/request-response.dto';
 
 @Injectable()
 export class RequestsService {
@@ -39,10 +39,13 @@ export class RequestsService {
     files: Express.Multer.File[],
     userId: string,
   ): Promise<Request> {
+
+    console.log("request", dto);
     const queryRunner =
       this.requestRepository.manager.connection.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
+
 
     try {
       const request = queryRunner.manager.create(Request, {
@@ -52,16 +55,11 @@ export class RequestsService {
       const savedRequest = await queryRunner.manager.save(request);
 
       const arrItems = JSON.parse(dto.items || '[]');
-      if (!arrItems.length) {
+      if (arrItems.length <= 0) {
         throw new BadRequestException(`Items is required`);
       }
 
-      const errItems: {
-        product_id: string;
-        product_name: string | null;
-        details: string;
-      }[] = [];
-
+      const errItems: RequestResponseErrorItemDTO[] = [];
       for (const item of arrItems) {
         const product = await this.productRepository.findOne({
           where: { id: item.product_id },

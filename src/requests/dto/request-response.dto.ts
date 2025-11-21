@@ -63,3 +63,14 @@ export class RequestResponseDto {
    @ApiProperty()
   current_status: string;
 }
+
+export class RequestResponseErrorItemDTO{
+   @ApiProperty()
+  product_id: string;
+
+   @ApiProperty()
+  product_name: string | null;
+
+  @ApiProperty()
+  details : string
+ }
