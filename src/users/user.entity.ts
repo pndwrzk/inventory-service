@@ -6,7 +6,6 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
-  OneToMany,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { UserRole } from './user-role.enum';
@@ -37,18 +36,11 @@ export class User {
   })
   role: UserRole;
 
-@ApiProperty({ required: false, nullable: true })
-@ManyToOne(() => User, { eager: false, onDelete: 'SET NULL' })
-@JoinColumn({ name: 'created_by' })
-created_by: User | null;
-
-
-
   @ApiProperty({ required: false, nullable: true })
   @ManyToOne(() => Branch, { eager: false, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'branch_id' })
   branch: Branch | null;
- 
+
   @ApiProperty()
   @CreateDateColumn()
   created_at: Date;
