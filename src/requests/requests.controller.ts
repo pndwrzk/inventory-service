@@ -30,6 +30,7 @@ import { JwtUser } from 'src/common/interface/jwt-user';
 import { IdResponseDto } from 'src/common/dto/id-response.dto';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { UserRole } from '../users/user-role.enum';
+import { Request } from 'express';
 import { RequestResponseDto } from './dto/request-response.dto';
 import {
   ApproveStatusDto,
@@ -116,10 +117,12 @@ export class RequestsController {
     description: 'List of requests',
     type: [RequestResponseDto],
   })
-  async findAll(@Query('page') page = 1, @Query('size') size = 10, @Req() req: { user: JwtUser }) {
+  async findAll(@Query('page') page = 1, @Query('size') size = 10, @Req() req: { user: JwtUser }, req2: Request) {
      const userId = req.user.userId;
     const pageNumber = Number(page);
     const pageSize = Number(size);
+     const baseUrl = `${req2.protocol}://${req2.get('host')}`;
+     console.log(baseUrl);
     const { data, meta } = await this.requestsService.findAll(
       pageNumber,
       pageSize,
