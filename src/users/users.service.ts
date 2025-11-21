@@ -14,12 +14,15 @@ import { JwtService } from '@nestjs/jwt';
 import { LoginResponseDto } from './dto/login-response.dto';
 import { UserListResponseDto } from './dto/user-list-response.dto';
 import { TokenResponseDto } from './dto/token-response.dto';
+import { Branch } from 'src/branches/branch.entity';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    @InjectRepository(Branch)
+        private readonly branchRepository: Repository<Branch>,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -50,8 +53,17 @@ export class UsersService {
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(data.password, saltRounds);
 
+    let branch : Branch | null = null;
+    if (data.branch_id) {
+      branch = await this.branchRepository.findOne({ where: { id: data.branch_id } });
+      if (!branch) {
+        throw new BadRequestException('branch not found');
+      }
+    }
+
     const user = this.userRepo.create({
       ...data,
+      branch,
       password: hashedPassword,
     });
 
