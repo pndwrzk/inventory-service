@@ -41,6 +41,7 @@ export class RequestsService {
   ): Promise<Request> {
 
     console.log("request", dto);
+     console.log("files",  files);
     const queryRunner =
       this.requestRepository.manager.connection.createQueryRunner();
     await queryRunner.connect();
