@@ -206,7 +206,7 @@ export class RequestsService {
         created_at: s.created_at,
         attachments: s.attachments?.map((a) => ({
           id: a.id,
-          file_path: `${'http://103.63.25.53:3001'}/${a.file_path}`,
+          url_file: `${'http://103.63.25.53:3001'}/${a.file_path}`,
         })),
       })),
       created_at: req.created_at,

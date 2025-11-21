@@ -17,7 +17,7 @@ export class AttachmentDto {
   id: string;
 
   @ApiProperty()
-  file_path: string;
+  url_file: string;
 }
 
 export class StatusHistoryDto {
