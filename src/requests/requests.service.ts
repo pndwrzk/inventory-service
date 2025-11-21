@@ -60,19 +60,19 @@ export class RequestsService {
 
          if (!product) {
           throw new BadRequestException(
-            `Product with id ${item.name} not found`,
+            `Product with id ${item.id} not found`,
           );
         }
 
         if (product.stock <= 0) {
           throw new BadRequestException(
-            `Product with id ${item.name} is out of stock`,
+            `Product with id ${product.name} is out of stock`,
           );
         }
 
         if (item.quantity > product.stock) {
           throw new BadRequestException(
-            `Requested quantity (${item.quantity}) for product id ${item.name} exceeds available stock (${product.stock})`,
+            `Requested quantity (${item.quantity}) for product id ${product.name} exceeds available stock (${product.stock})`,
           );
         }
 
