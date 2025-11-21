@@ -11,6 +11,7 @@ import { RequestItem } from '../request-item/request-item.entity';
 import { Attachment } from '../attachments/attachments.entity';
 import { RequestStatusHistory } from '../request-status-history/request-status-history.entity';
 import { Product } from 'src/products/products.entity';
+import { User } from 'src/users/user.entity';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { Product } from 'src/products/products.entity';
       Attachment,
       RequestStatusHistory,
       Product,
+      User
     ]),
     MulterModule.register({
       storage: multer.memoryStorage(),
