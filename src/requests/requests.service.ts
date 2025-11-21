@@ -213,7 +213,7 @@ export class RequestsService {
         id: s.id,
         status: s.status,
         remark: s.remark,
-        action_by: s.user.full_name,
+        action_by: s.user.username,
         created_at: s.created_at,
         attachments: s.attachments?.map((a) => ({
           id: a.id,
