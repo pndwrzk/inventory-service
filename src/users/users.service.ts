@@ -27,7 +27,7 @@ export class UsersService {
   ) {}
 
   async create(data: CreateUserDto): Promise<IdResponseDto> {
-    console.log(data);
+   
     const existing = await this.userRepo.findOne({
       where: { username: data.username },
     });

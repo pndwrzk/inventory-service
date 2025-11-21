@@ -6,12 +6,13 @@ import { User } from './user.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtAccessStrategy } from './jwt-access.strategy';
 import { JwtRefreshStrategy } from './jwt-refresh.strategy';
+import { Branch } from 'src/branches/branch.entity';
 
 
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User ,Branch]),
     JwtModule.register({}),
   ],
   providers: [UsersService, JwtAccessStrategy, JwtRefreshStrategy],
