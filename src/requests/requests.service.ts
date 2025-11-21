@@ -59,7 +59,7 @@ export class RequestsService {
       const errItems: {
         product_id: string;
         product_name: string | null;
-        message: string;
+        details: string;
       }[] = [];
 
       for (const item of arrItems) {
@@ -71,7 +71,7 @@ export class RequestsService {
           errItems.push({
             product_id: item.product_id,
             product_name: null,
-            message: 'Product not found',
+            details: 'Product not found',
           });
           continue;
         }
@@ -80,7 +80,7 @@ export class RequestsService {
           errItems.push({
             product_id: item.product_id,
             product_name: product.name,
-            message: 'Product out of stock',
+            details: 'Product out of stock',
           });
           continue;
         }
@@ -89,7 +89,7 @@ export class RequestsService {
           errItems.push({
             product_id: item.product_id,
             product_name: product.name,
-            message: `Requested quantity (${item.quantity}) exceeds available stock (${product.stock})`,
+            details: `Requested quantity (${item.quantity}) exceeds available stock (${product.stock})`,
           });
           continue;
         }
