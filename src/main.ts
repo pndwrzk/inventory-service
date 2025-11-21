@@ -1,9 +1,10 @@
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
-import * as express from 'express';
+
 import {
   ValidationPipe,
   UnprocessableEntityException,
@@ -12,9 +13,10 @@ import {
 import { BaseResponse } from './common/dto/base-response.dto';
 import { join } from 'path';
 
+
 async function bootstrap() {
  
-  const app = await NestFactory.create(AppModule, { cors: true });  
+ const app = await NestFactory.create<NestExpressApplication>(AppModule, { cors: true });  
 
   app.useGlobalInterceptors(new ResponseInterceptor());
   
@@ -58,6 +60,10 @@ async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api-docs', app, document);
+
+ app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+    prefix: '/uploads/',
+  });
 
   await app.listen(process.env.APP_PORT || 3000,'0.0.0.0');
 }
