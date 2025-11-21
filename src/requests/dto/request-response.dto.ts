@@ -50,6 +50,9 @@ export class RequestResponseDto {
   @ApiProperty()
   pickup_schedule: Date | null;
 
+  @ApiProperty()
+  code: string;
+
 
   @ApiProperty({ type: [StatusHistoryDto] })
   status_histories: StatusHistoryDto[];

@@ -14,6 +14,7 @@ import { RequestStatusHistory } from '../request-status-history/request-status-h
 import { RequestStatus } from '../request-status-history/request-status.enum';
 import { Product } from 'src/products/products.entity';
 import { RequestResponseDto, RequestResponseErrorItemDTO } from './dto/request-response.dto';
+import { Code } from 'typeorm/browser';
 
 @Injectable()
 export class RequestsService {
@@ -189,6 +190,7 @@ export class RequestsService {
 
     const data = requests.map((req) => ({
       id: req.id,
+      code : req.code, 
       current_status: req.statusHistories?.[0]?.status || 'Unknown',
       pickup_schedule: req.pickup_schedule || null,
       items: req.items?.map((item) => ({
