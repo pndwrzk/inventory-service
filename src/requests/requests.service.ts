@@ -60,19 +60,19 @@ export class RequestsService {
 
          if (!product) {
           throw new BadRequestException(
-            `Product with id ${item.product_id} not found`,
+            `Product with id ${item.name} not found`,
           );
         }
 
         if (product.stock <= 0) {
           throw new BadRequestException(
-            `Product with id ${item.product_id} is out of stock`,
+            `Product with id ${item.name} is out of stock`,
           );
         }
 
         if (item.quantity > product.stock) {
           throw new BadRequestException(
-            `Requested quantity (${item.quantity}) for product id ${item.product_id} exceeds available stock (${product.stock})`,
+            `Requested quantity (${item.quantity}) for product id ${item.name} exceeds available stock (${product.stock})`,
           );
         }
 
@@ -86,12 +86,6 @@ export class RequestsService {
 
       await queryRunner.manager.save(items);
 
-      if (files?.length > 0) {
-        const uploadDir = path.join(process.cwd(), 'uploads/attachments');
-        if (!fs.existsSync(uploadDir)) {
-          fs.mkdirSync(uploadDir, { recursive: true });
-        }
-
         const statusHistory = queryRunner.manager.create(RequestStatusHistory, {
         action_by: userId,
         status: RequestStatus.PENDING,
@@ -100,6 +94,13 @@ export class RequestsService {
       });
 
       await queryRunner.manager.save(statusHistory);
+
+      if (files?.length > 0) {
+        const uploadDir = path.join(process.cwd(), 'uploads/attachments');
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+
 
         const attachments = files.map((file) => {
           if (!file.buffer) {
