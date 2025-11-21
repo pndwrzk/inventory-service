@@ -8,6 +8,8 @@ import { LoginRequestDto } from './dto/login-request.dto';
 import { LoginResponseDto } from './dto/login-response.dto';
 import { UserListResponseDto } from './dto/user-list-response.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { RefreshTokenDTO } from './dto/refresh-token-request';
+import { TokenResponseDto } from './dto/token-response.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -64,4 +66,22 @@ export class UsersController {
     const users = await this.usersService.getAll();
     return BaseResponse.Success(users, 'Fetched all users successfully');
   }
+
+  @Post('refresh')
+@HttpCode(200)
+@ApiOperation({ summary: 'Refresh access token' })
+@ApiResponse({
+  status: 200,
+  description: 'Token refreshed successfully',
+  type: TokenResponseDto,
+})
+async refresh(
+  @Body() body: RefreshTokenDTO,
+): Promise<BaseResponse<TokenResponseDto>> {
+  const data = await this.usersService.refreshToken(body.refresh_token);
+  return BaseResponse.Success(data, 'Token refreshed successfully');
 }
+
+}
+
+

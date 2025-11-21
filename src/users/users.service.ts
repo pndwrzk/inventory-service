@@ -13,6 +13,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { JwtService } from '@nestjs/jwt';
 import { LoginResponseDto } from './dto/login-response.dto';
 import { UserListResponseDto } from './dto/user-list-response.dto';
+import { TokenResponseDto } from './dto/token-response.dto';
 
 @Injectable()
 export class UsersService {
@@ -30,7 +31,7 @@ export class UsersService {
       throw new BadRequestException('Username already exists');
     }
 
-    // Validasi role ↔ branch_id
+
     if (data.role === UserRole.BRANCH && !data.branch_id) {
       throw new BadRequestException('branch_id is required for role "branch"');
     }
@@ -43,7 +44,7 @@ export class UsersService {
       );
     }
 
-    // Hash password
+
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(data.password, saltRounds);
 
@@ -121,5 +122,45 @@ export class UsersService {
     updated_at: user.updated_at,
   }));
 }
+
+async refreshToken(refreshToken: string): Promise<TokenResponseDto> {
+  if (!refreshToken) {
+    throw new UnauthorizedException('Missing refresh token');
+  }
+
+  try {
+    const payload = this.jwtService.verify(refreshToken, {
+      secret: process.env.JWT_REFRESH_SECRET,
+    });
+
+    const user = await this.userRepo.findOne({ where: { id: payload.sub } });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const newPayload = { sub: user.id, username: user.username };
+
+    const accessToken = this.jwtService.sign(newPayload, {
+      secret: process.env.JWT_ACCESS_SECRET,
+      expiresIn: '1h',
+    });
+
+    const refreshTokenExp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30;
+    const accessTokenExp = Math.floor(Date.now() / 1000) + 60 * 60;
+
+    return {
+     
+        access_token: accessToken,
+        access_token_expired: accessTokenExp,
+        refresh_token: refreshToken,
+        refresh_token_expired: refreshTokenExp,
+    
+    };
+  } catch (err) {
+    throw new UnauthorizedException('Invalid or expired refresh token');
+  }
+}
+
 
 }
