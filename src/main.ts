@@ -18,6 +18,11 @@ async function bootstrap() {
  
  const app = await NestFactory.create<NestExpressApplication>(AppModule, { cors: true });  
 
+ app.useStaticAssets(join(process.cwd(), 'uploads'), {
+  prefix: '/uploads/',
+});
+
+
   app.useGlobalInterceptors(new ResponseInterceptor());
   
 
@@ -61,9 +66,6 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api-docs', app, document);
 
- app.useStaticAssets(join(__dirname, '..', 'uploads'), {
-    prefix: '/uploads/',
-  });
 
   await app.listen(process.env.APP_PORT || 3000,'0.0.0.0');
 }
