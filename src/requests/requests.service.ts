@@ -62,53 +62,49 @@ export class RequestsService {
         message: string;
       }[] = [];
 
-      const validItems = arrItems.filter(async (item) => {
+      for (const item of arrItems) {
         const product = await this.productRepository.findOne({
           where: { id: item.product_id },
         });
 
         if (!product) {
           errItems.push({
-            product_id: item.id,
+            product_id: item.product_id,
             product_name: null,
-            message: `Product not found`,
+            message: 'Product not found',
           });
-          return false;
+          continue;
         }
 
         if (product.stock <= 0) {
           errItems.push({
-            product_id: item.id,
+            product_id: item.product_id,
             product_name: product.name,
-            message: `Product out of stock`,
+            message: 'Product out of stock',
           });
-          return false;
+          continue;
         }
 
         if (item.quantity > product.stock) {
           errItems.push({
-            product_id: item.id,
+            product_id: item.product_id,
             product_name: product.name,
             message: `Requested quantity (${item.quantity}) exceeds available stock (${product.stock})`,
           });
-          return false;
+          continue;
         }
+      }
 
-        return true;
-      });
-
-      if (errItems.length) {
+      if (errItems.length > 0) {
         throw new BadRequestException(errItems);
       }
 
-      const items = await Promise.all(
-        validItems.map((item) =>
-          queryRunner.manager.create(RequestItem, {
-            request: savedRequest,
-            product: { id: item.product_id } as Product,
-            quantity: item.quantity,
-          }),
-        ),
+      const items = arrItems.map((item) =>
+        queryRunner.manager.create(RequestItem, {
+          request: savedRequest,
+          product: { id: item.product_id } as Product,
+          quantity: item.quantity,
+        }),
       );
 
       await queryRunner.manager.save(items);
