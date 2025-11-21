@@ -14,7 +14,7 @@ import { RequestStatusHistory } from '../request-status-history/request-status-h
 import { RequestStatus } from '../request-status-history/request-status.enum';
 import { Product } from 'src/products/products.entity';
 import { RequestResponseDto, RequestResponseErrorItemDTO } from './dto/request-response.dto';
-import { Code } from 'typeorm/browser';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class RequestsService {
@@ -131,7 +131,7 @@ export class RequestsService {
             );
           }
 
-          const filename = `${Date.now()}-${file.originalname}`;
+          const filename = uuidv4();
           const filePath = path.join(uploadDir, filename);
           fs.writeFileSync(filePath, file.buffer);
 
@@ -206,7 +206,7 @@ export class RequestsService {
         created_at: s.created_at,
         attachments: s.attachments?.map((a) => ({
           id: a.id,
-          file_path: `${process.env.APP_URL}/${a.file_path}`,
+          file_path: `${'http://103.63.25.53:3001'}/${a.file_path}`,
         })),
       })),
       created_at: req.created_at,
