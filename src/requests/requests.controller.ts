@@ -31,10 +31,8 @@ import { IdResponseDto } from 'src/common/dto/id-response.dto';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { UserRole } from '../users/user-role.enum';
 import { RequestResponseDto } from './dto/request-response.dto';
-import {
-  ApproveStatusDto,
-  RejectStatusDto,
-} from './dto/update-status.dto';
+import { ApproveStatusDto, RejectStatusDto } from './dto/update-status.dto';
+import { CountRequestResponseDto } from './dto/count-request-response';
 
 @ApiTags('requests')
 @Roles(UserRole.STAFF)
@@ -115,15 +113,19 @@ export class RequestsController {
     description: 'List of requests',
     type: [RequestResponseDto],
   })
-  async findAll(@Query('page') page = 1, @Query('size') size = 10, @Req() req: { user: JwtUser }) {
-     const userId = req.user.userId;
+  async findAll(
+    @Query('page') page = 1,
+    @Query('size') size = 10,
+    @Req() req: { user: JwtUser },
+  ) {
+    const userId = req.user.userId;
     const pageNumber = Number(page);
     const pageSize = Number(size);
-    
+
     const { data, meta } = await this.requestsService.findAll(
       pageNumber,
       pageSize,
-      userId
+      userId,
     );
     return BaseResponse.Success(data, 'Requests retrieved successfully', {
       page: meta.page,
@@ -232,5 +234,17 @@ export class RequestsController {
       { id: result.requestId },
       'Request deleted successfully',
     );
+  }
+
+  @Get('summary')
+  @ApiOperation({ summary: 'Count all requests by status' })
+  @ApiResponse({
+    status: 200,
+    description: 'Count of all request statuses',
+    type: CountRequestResponseDto,
+  })
+  async countAllStatus() {
+    const result = await this.requestsService.countAllStatus();
+    return BaseResponse.Success(result, 'Count retrieved successfully');
   }
 }

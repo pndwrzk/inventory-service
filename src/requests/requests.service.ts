@@ -20,6 +20,7 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { User } from 'src/users/user.entity';
 import { UserRole } from 'src/users/user-role.enum';
+import { CountRequestResponseDto } from './dto/count-request-response';
 
 @Injectable()
 export class RequestsService {
@@ -414,4 +415,30 @@ export class RequestsService {
     }
     return code.slice(0, length);
   }
+
+  async countAllStatus(): Promise<CountRequestResponseDto> {
+  const total_pending = await this.requestStatusHistoryRepository.count({
+    where: { status: RequestStatus.PENDING },
+  });
+
+  const total_approved = await this.requestStatusHistoryRepository.count({
+    where: { status: RequestStatus.APPROVED },
+  });
+
+  const total_rejected = await this.requestStatusHistoryRepository.count({
+    where: { status: RequestStatus.REJECTED },
+  });
+
+  const total_completed = await this.requestStatusHistoryRepository.count({
+    where: { status: RequestStatus.COMPLETED },
+  });
+
+  return {
+    total_pending,
+    total_approved,
+    total_rejected,
+    total_completed,
+  };
+}
+
 }
