@@ -133,8 +133,8 @@ export class RequestsService {
               `${file.originalname} tidak ada buffer`,
             );
           }
-
-          const filename = uuidv4();
+           const ext = path.extname(file.originalname);
+          const filename = uuidv4() + ext;
           const filePath = path.join(uploadDir, filename);
           fs.writeFileSync(filePath, file.buffer);
 
