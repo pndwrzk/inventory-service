@@ -176,7 +176,6 @@ export class RequestsService {
       throw new NotFoundException(`User Not Found`);
     }
 
-
     const [requests, total] = await this.requestRepository.findAndCount({
       where: {
         created_by: user.role === UserRole.BRANCH ? { id: userId } : {},
@@ -417,28 +416,79 @@ export class RequestsService {
   }
 
   async countAllStatus(): Promise<CountRequestResponseDto> {
-  const total_pending = await this.requestStatusHistoryRepository.count({
-    where: { status: RequestStatus.PENDING },
+    const total_request = await this.requestStatusHistoryRepository.count();
+
+    const total_pending = await this.requestStatusHistoryRepository.count({
+      where: { status: RequestStatus.PENDING },
+    });
+
+    const total_approved = await this.requestStatusHistoryRepository.count({
+      where: { status: RequestStatus.APPROVED },
+    });
+
+    const total_rejected = await this.requestStatusHistoryRepository.count({
+      where: { status: RequestStatus.REJECTED },
+    });
+
+    const total_completed = await this.requestStatusHistoryRepository.count({
+      where: { status: RequestStatus.COMPLETED },
+    });
+
+    return {
+      total_request,
+      total_pending,
+      total_approved,
+      total_rejected,
+      total_completed,
+    };
+  }
+  async findByCode(code: string): Promise<RequestResponseDto> {
+  const request = await this.requestRepository.findOne({
+    where: { code },
+    relations: [
+      'items',
+      'items.product',
+      'statusHistories.attachments',
+      'statusHistories',
+      'statusHistories.user',
+    ],
+    order: {
+      statusHistories: {
+        created_at: 'DESC',
+      },
+    },
   });
 
-  const total_approved = await this.requestStatusHistoryRepository.count({
-    where: { status: RequestStatus.APPROVED },
-  });
-
-  const total_rejected = await this.requestStatusHistoryRepository.count({
-    where: { status: RequestStatus.REJECTED },
-  });
-
-  const total_completed = await this.requestStatusHistoryRepository.count({
-    where: { status: RequestStatus.COMPLETED },
-  });
+  if (!request) {
+    throw new NotFoundException(`Request with code ${code} not found`);
+  }
 
   return {
-    total_pending,
-    total_approved,
-    total_rejected,
-    total_completed,
+    id: request.id,
+    code: request.code,
+    current_status: request.statusHistories?.[0]?.status || 'Unknown',
+    pickup_schedule: request.pickup_schedule || null,
+    items: request.items?.map((item) => ({
+      id: item.id,
+      product_name: item.product?.name || 'Unknown Product',
+      quantity: item.quantity,
+    })),
+    status_histories: request.statusHistories?.map((s) => ({
+      id: s.id,
+      status: s.status,
+      remark: s.remark,
+      action_by: s.user.username,
+      created_at: s.created_at,
+      attachments: s.attachments?.map((a) => ({
+        id: a.id,
+        url_file: `${'http://103.63.25.53:3001'}/${a.file_path}`,
+      })),
+    })),
+    created_at: request.created_at,
+    updated_at: request.updated_at,
   };
 }
 
 }
+
+

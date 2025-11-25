@@ -247,4 +247,17 @@ export class RequestsController {
     const result = await this.requestsService.countAllStatus();
     return BaseResponse.Success(result, 'Count retrieved successfully');
   }
+
+  @Get('code/:code')
+  @ApiOperation({ summary: 'Get request by code' })
+  @ApiResponse({
+    status: 200,
+    description: 'Request retrieved successfully',
+    type: RequestResponseDto,
+  })
+  async findByCode(@Param('code') code: string) {
+    const request = await this.requestsService.findByCode(code);
+
+    return BaseResponse.Success(request, 'Request retrieved successfully');
+  }
 }

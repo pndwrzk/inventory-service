@@ -2,6 +2,9 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class CountRequestResponseDto {
   @ApiProperty({ type: Number, example: 5 })
+  total_request: number;
+
+  @ApiProperty({ type: Number, example: 5 })
   total_pending: number;
 
   @ApiProperty({ type: Number, example: 10 })
