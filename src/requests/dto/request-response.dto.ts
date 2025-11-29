@@ -54,7 +54,7 @@ export class RequestResponseDto {
   code: string;
 
   @ApiProperty()
-  createdBy: string | null;
+  created_by: string | null;
 
 
   @ApiProperty({ type: [StatusHistoryDto] })
