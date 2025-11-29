@@ -204,6 +204,7 @@ export class RequestsService {
       code: req.code,
       current_status: req.statusHistories?.[0]?.status || 'Unknown',
       pickup_schedule: req.pickup_schedule || null,
+      createdBy : req.statusHistories?.[req.statusHistories?.length-1]?.user.full_name || null,
       items: req.items?.map((item) => ({
         id: item.id,
         product_name: item.product?.name || 'Unknown Product',
@@ -467,6 +468,7 @@ export class RequestsService {
     id: request.id,
     code: request.code,
     current_status: request.statusHistories?.[0]?.status || 'Unknown',
+     createdBy : request.statusHistories?.[request.statusHistories?.length-1]?.user.full_name || null,
     pickup_schedule: request.pickup_schedule || null,
     items: request.items?.map((item) => ({
       id: item.id,
