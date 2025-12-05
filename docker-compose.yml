@@ -1,0 +1,12 @@
+version: "3.9"
+
+services:
+  app:
+    container_name: nest-app
+    build: .
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    restart: always
+    command: ["node", "dist/main.js"]
