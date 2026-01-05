@@ -220,7 +220,7 @@ export class RequestsService {
         created_at: s.created_at,
         attachments: s.attachments?.map((a) => ({
           id: a.id,
-          url_file: `${'http://103.63.25.53:3001'}/${a.file_path}`,
+          url_file: `${'http://103.183.75.81:3000'}/${a.file_path}`,
         })),
       })),
       created_at: req.created_at,
@@ -447,12 +447,7 @@ export class RequestsService {
         'rsh.request_id = r.id AND rsh.created_at = latest.max_created_at',
       );
 
-    /**
-     * KHUSUS ROLE BRANCH
-     * request harus:
-     * - status pertama = PENDING
-     * - action_by = userId
-     */
+  
     if (user.role === UserRole.BRANCH) {
       qb.innerJoin(
         (qb) =>
@@ -552,7 +547,7 @@ export class RequestsService {
         created_at: s.created_at,
         attachments: s.attachments?.map((a) => ({
           id: a.id,
-          url_file: `${'http://103.63.25.53:3001'}/${a.file_path}`,
+          url_file: `${'http://103.183.75.81:3000'}/${a.file_path}`,
         })),
       })),
       created_at: request.created_at,
