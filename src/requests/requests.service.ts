@@ -133,7 +133,7 @@ export class RequestsService {
               `${file.originalname} tidak ada buffer`,
             );
           }
-           const ext = path.extname(file.originalname);
+          const ext = path.extname(file.originalname);
           const filename = uuidv4() + ext;
           const filePath = path.join(uploadDir, filename);
           fs.writeFileSync(filePath, file.buffer);
@@ -204,7 +204,9 @@ export class RequestsService {
       code: req.code,
       current_status: req.statusHistories?.[0]?.status || 'Unknown',
       pickup_schedule: req.pickup_schedule || null,
-      created_by : req.statusHistories?.[req.statusHistories?.length-1]?.user.full_name || null,
+      created_by:
+        req.statusHistories?.[req.statusHistories?.length - 1]?.user
+          .full_name || null,
       items: req.items?.map((item) => ({
         id: item.id,
         product_name: item.product?.name || 'Unknown Product',
@@ -416,113 +418,145 @@ export class RequestsService {
     return code.slice(0, length);
   }
 
-async countAllStatus(): Promise<CountRequestResponseDto> {
-  const qb = this.requestRepository
-    .createQueryBuilder('r')
-    .innerJoin(
-      qb =>
-        qb
-          .subQuery()
-          .select('rsh.request_id', 'request_id')
-          .addSelect('MAX(rsh.created_at)', 'max_created_at')
-          .from(RequestStatusHistory, 'rsh')
-          .groupBy('rsh.request_id'),
-      'latest',
-      'latest.request_id = r.id',
-    )
-    .innerJoin(
-      RequestStatusHistory,
-      'rsh',
-      'rsh.request_id = r.id AND rsh.created_at = latest.max_created_at',
-    );
+  async countAllStatus(userId: string): Promise<CountRequestResponseDto> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
 
-  const total_request = await qb.getCount();
+    if (!user) {
+      throw new NotFoundException('user not found');
+    }
 
-  const total_pending = await qb
-    .clone()
-    .andWhere('rsh.status = :status', {
-      status: RequestStatus.PENDING,
-    })
-    .getCount();
+    const qb = this.requestRepository
+      .createQueryBuilder('r')
 
-  const total_approved = await qb
-    .clone()
-    .andWhere('rsh.status = :status', {
-      status: RequestStatus.APPROVED,
-    })
-    .getCount();
+      .innerJoin(
+        (qb) =>
+          qb
+            .subQuery()
+            .select('rsh.request_id', 'request_id')
+            .addSelect('MAX(rsh.created_at)', 'max_created_at')
+            .from(RequestStatusHistory, 'rsh')
+            .groupBy('rsh.request_id'),
+        'latest',
+        'latest.request_id = r.id',
+      )
+      .innerJoin(
+        RequestStatusHistory,
+        'rsh',
+        'rsh.request_id = r.id AND rsh.created_at = latest.max_created_at',
+      );
 
-  const total_rejected = await qb
-    .clone()
-    .andWhere('rsh.status = :status', {
-      status: RequestStatus.REJECTED,
-    })
-    .getCount();
+    /**
+     * KHUSUS ROLE BRANCH
+     * request harus:
+     * - status pertama = PENDING
+     * - action_by = userId
+     */
+    if (user.role === UserRole.BRANCH) {
+      qb.innerJoin(
+        (qb) =>
+          qb
+            .subQuery()
+            .select('rsh2.request_id', 'request_id')
+            .addSelect('MIN(rsh2.created_at)', 'min_created_at')
+            .from(RequestStatusHistory, 'rsh2')
+            .where('rsh2.status = :pending', {
+              pending: RequestStatus.PENDING,
+            })
+            .andWhere('rsh2.action_by = :userId', { userId })
+            .groupBy('rsh2.request_id'),
+        'first',
+        'first.request_id = r.id',
+      );
+    }
 
-  const total_completed = await qb
-    .clone()
-    .andWhere('rsh.status = :status', {
-      status: RequestStatus.COMPLETED,
-    })
-    .getCount();
+    const total_request = await qb.getCount();
 
-  return {
-    total_request,
-    total_pending,
-    total_approved,
-    total_rejected,
-    total_completed,
-  };
-}
+    const total_pending = await qb
+      .clone()
+      .andWhere('rsh.status = :status', {
+        status: RequestStatus.PENDING,
+      })
+      .getCount();
 
-  async findByCode(code: string): Promise<RequestResponseDto> {
-  const request = await this.requestRepository.findOne({
-    where: { code },
-    relations: [
-      'items',
-      'items.product',
-      'statusHistories.attachments',
-      'statusHistories',
-      'statusHistories.user',
-    ],
-    order: {
-      statusHistories: {
-        created_at: 'DESC',
-      },
-    },
-  });
+    const total_approved = await qb
+      .clone()
+      .andWhere('rsh.status = :status', {
+        status: RequestStatus.APPROVED,
+      })
+      .getCount();
 
-  if (!request) {
-    throw new NotFoundException(`Request with code ${code} not found`);
+    const total_rejected = await qb
+      .clone()
+      .andWhere('rsh.status = :status', {
+        status: RequestStatus.REJECTED,
+      })
+      .getCount();
+
+    const total_completed = await qb
+      .clone()
+      .andWhere('rsh.status = :status', {
+        status: RequestStatus.COMPLETED,
+      })
+      .getCount();
+
+    return {
+      total_request,
+      total_pending,
+      total_approved,
+      total_rejected,
+      total_completed,
+    };
   }
 
-  return {
-    id: request.id,
-    code: request.code,
-    current_status: request.statusHistories?.[0]?.status || 'Unknown',
-     created_by : request.statusHistories?.[request.statusHistories?.length-1]?.user.full_name || null,
-    pickup_schedule: request.pickup_schedule || null,
-    items: request.items?.map((item) => ({
-      id: item.id,
-      product_name: item.product?.name || 'Unknown Product',
-      quantity: item.quantity,
-    })),
-    status_histories: request.statusHistories?.map((s) => ({
-      id: s.id,
-      status: s.status,
-      remark: s.remark,
-      action_by: s.user.username,
-      created_at: s.created_at,
-      attachments: s.attachments?.map((a) => ({
-        id: a.id,
-        url_file: `${'http://103.63.25.53:3001'}/${a.file_path}`,
+  async findByCode(code: string): Promise<RequestResponseDto> {
+    const request = await this.requestRepository.findOne({
+      where: { code },
+      relations: [
+        'items',
+        'items.product',
+        'statusHistories.attachments',
+        'statusHistories',
+        'statusHistories.user',
+      ],
+      order: {
+        statusHistories: {
+          created_at: 'DESC',
+        },
+      },
+    });
+
+    if (!request) {
+      throw new NotFoundException(`Request with code ${code} not found`);
+    }
+
+    return {
+      id: request.id,
+      code: request.code,
+      current_status: request.statusHistories?.[0]?.status || 'Unknown',
+      created_by:
+        request.statusHistories?.[request.statusHistories?.length - 1]?.user
+          .full_name || null,
+      pickup_schedule: request.pickup_schedule || null,
+      items: request.items?.map((item) => ({
+        id: item.id,
+        product_name: item.product?.name || 'Unknown Product',
+        quantity: item.quantity,
       })),
-    })),
-    created_at: request.created_at,
-    updated_at: request.updated_at,
-  };
+      status_histories: request.statusHistories?.map((s) => ({
+        id: s.id,
+        status: s.status,
+        remark: s.remark,
+        action_by: s.user.username,
+        created_at: s.created_at,
+        attachments: s.attachments?.map((a) => ({
+          id: a.id,
+          url_file: `${'http://103.63.25.53:3001'}/${a.file_path}`,
+        })),
+      })),
+      created_at: request.created_at,
+      updated_at: request.updated_at,
+    };
+  }
 }
-
-}
-
-
