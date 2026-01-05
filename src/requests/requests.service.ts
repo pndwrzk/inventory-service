@@ -416,33 +416,65 @@ export class RequestsService {
     return code.slice(0, length);
   }
 
-  async countAllStatus(): Promise<CountRequestResponseDto> {
-    const total_request = await this.requestStatusHistoryRepository.count();
+async countAllStatus(): Promise<CountRequestResponseDto> {
+  const qb = this.requestRepository
+    .createQueryBuilder('r')
+    .innerJoin(
+      qb =>
+        qb
+          .subQuery()
+          .select('rsh.request_id', 'request_id')
+          .addSelect('MAX(rsh.created_at)', 'max_created_at')
+          .from(RequestStatusHistory, 'rsh')
+          .groupBy('rsh.request_id'),
+      'latest',
+      'latest.request_id = r.id',
+    )
+    .innerJoin(
+      RequestStatusHistory,
+      'rsh',
+      'rsh.request_id = r.id AND rsh.created_at = latest.max_created_at',
+    );
 
-    const total_pending = await this.requestStatusHistoryRepository.count({
-      where: { status: RequestStatus.PENDING },
-    });
+  const total_request = await qb.getCount();
 
-    const total_approved = await this.requestStatusHistoryRepository.count({
-      where: { status: RequestStatus.APPROVED },
-    });
+  const total_pending = await qb
+    .clone()
+    .andWhere('rsh.status = :status', {
+      status: RequestStatus.PENDING,
+    })
+    .getCount();
 
-    const total_rejected = await this.requestStatusHistoryRepository.count({
-      where: { status: RequestStatus.REJECTED },
-    });
+  const total_approved = await qb
+    .clone()
+    .andWhere('rsh.status = :status', {
+      status: RequestStatus.APPROVED,
+    })
+    .getCount();
 
-    const total_completed = await this.requestStatusHistoryRepository.count({
-      where: { status: RequestStatus.COMPLETED },
-    });
+  const total_rejected = await qb
+    .clone()
+    .andWhere('rsh.status = :status', {
+      status: RequestStatus.REJECTED,
+    })
+    .getCount();
 
-    return {
-      total_request,
-      total_pending,
-      total_approved,
-      total_rejected,
-      total_completed,
-    };
-  }
+  const total_completed = await qb
+    .clone()
+    .andWhere('rsh.status = :status', {
+      status: RequestStatus.COMPLETED,
+    })
+    .getCount();
+
+  return {
+    total_request,
+    total_pending,
+    total_approved,
+    total_rejected,
+    total_completed,
+  };
+}
+
   async findByCode(code: string): Promise<RequestResponseDto> {
   const request = await this.requestRepository.findOne({
     where: { code },

@@ -16,40 +16,42 @@ export class BranchesService {
     const branch = this.branchRepo.create(dto);
     return await this.branchRepo.save(branch);
   }
-async findAll(
-  page: number,
-  size: number,
-  search?: string,
-): Promise<{ data: Branch[]; meta: { total: number; page: number; size: number; totalPage: number } }> {
-  const skip = (page - 1) * size;
+  async findAll(
+    page: number,
+    size: number,
+    search?: string,
+  ): Promise<{
+    data: Branch[];
+    meta: { total: number; page: number; size: number; totalPage: number };
+  }> {
+    const skip = (page - 1) * size;
 
- 
-  const where = search ? { name: ILike(`%${search}%`) } : {};
+    const where = search ? { name: ILike(`%${search}%`) } : {};
 
-  const [data, total] = await this.branchRepo.findAndCount({
-    where,
-    skip,
-    take: size,
-    order: { created_at: 'DESC' }, 
-  });
+    const [data, total] = await this.branchRepo.findAndCount({
+      where,
+      skip,
+      take: size,
+      order: { created_at: 'DESC' },
+    });
 
-  const totalPage = Math.ceil(total / size);
+    const totalPage = Math.ceil(total / size);
 
-  return {
-    data,
-    meta: {
-      total,
-      page,
-      size,
-      totalPage,
-    },
-  };
-}
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        size,
+        totalPage,
+      },
+    };
+  }
 
   async findOne(id: string): Promise<Branch | null> {
     const branch = await this.branchRepo.findOne({ where: { id } });
     if (!branch) {
-       throw new Error(`Branch with id ${id} not found`);
+      throw new Error(`Branch with id ${id} not found`);
     }
     return branch;
   }
