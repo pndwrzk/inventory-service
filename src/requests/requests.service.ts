@@ -197,6 +197,8 @@ export class RequestsService {
       take: size,
     });
 
+    console.log(requests,total)
+
     const totalPage = Math.ceil(total / size);
 
     const data = requests.map((req) => ({
@@ -377,9 +379,7 @@ export class RequestsService {
         await queryRunner.manager.save(product);
       }
 
-      /**
-       * 4️⃣ Commit
-       */
+     
       await queryRunner.commitTransaction();
       return request;
     } catch (err) {

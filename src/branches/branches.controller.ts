@@ -77,6 +77,7 @@ export class BranchesController {
       search,
     );
     return BaseResponse.Success(data, 'Branches retrieved successfully', {
+      total_data: meta.total,
       page: meta.page,
       size: meta.size,
       total_page: meta.totalPage,

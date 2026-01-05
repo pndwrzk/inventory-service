@@ -78,6 +78,7 @@ export class ProductsController {
     );
 
     return BaseResponse.Success(data, 'Products retrieved successfully', {
+      total_data: meta.total,
       page: meta.page,
       size: meta.size,
       total_page: meta.totalPage,

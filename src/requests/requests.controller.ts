@@ -128,6 +128,7 @@ export class RequestsController {
       userId,
     );
     return BaseResponse.Success(data, 'Requests retrieved successfully', {
+      total_data : meta.total,
       page: meta.page,
       size: meta.size,
       total_page: meta.totalPage,
