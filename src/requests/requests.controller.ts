@@ -243,8 +243,8 @@ export class RequestsController {
     description: 'Count of all request statuses',
     type: CountRequestResponseDto,
   })
-  async countAllStatus() {
-    const result = await this.requestsService.countAllStatus();
+  async countAllStatus(@Req() req: { user: JwtUser }) {
+    const result = await this.requestsService.countAllStatus(req.user.userId);
     return BaseResponse.Success(result, 'Count retrieved successfully');
   }
 
