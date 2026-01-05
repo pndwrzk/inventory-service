@@ -298,7 +298,12 @@ export class RequestsService {
   ): Promise<Request> {
     const request = await this.requestRepository.findOne({
       where: { id: requestId },
-      relations: ['statusHistories', 'statusHistories.attachments'],
+      relations: [
+        'items',
+        'items.product',
+        'statusHistories',
+        'statusHistories.attachments',
+      ],
     });
 
     if (!request) {
@@ -307,6 +312,7 @@ export class RequestsService {
 
     const queryRunner =
       this.requestRepository.manager.connection.createQueryRunner();
+
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
@@ -314,8 +320,8 @@ export class RequestsService {
       const statusHistory = queryRunner.manager.create(RequestStatusHistory, {
         action_by: userId,
         status: RequestStatus.COMPLETED,
-        remark: dto.remarks || null,
-        request: request,
+        remark: dto?.remarks || null,
+        request,
       });
 
       await queryRunner.manager.save(statusHistory);
@@ -333,12 +339,14 @@ export class RequestsService {
             );
           }
 
-          const filename = `${Date.now()}-${file.originalname}`;
+          const ext = path.extname(file.originalname);
+          const filename = `${Date.now()}-${uuidv4()}${ext}`;
           const filePath = path.join(uploadDir, filename);
+
           fs.writeFileSync(filePath, file.buffer);
 
           return queryRunner.manager.create(Attachment, {
-            request: request,
+            request,
             file_path: path.join('uploads/attachments', filename),
             requestStatusHistory: statusHistory,
           });
@@ -347,8 +355,32 @@ export class RequestsService {
         await queryRunner.manager.save(attachments);
       }
 
-      await queryRunner.commitTransaction();
+      for (const item of request.items) {
+        const product = await queryRunner.manager.findOne(Product, {
+          where: { id: item.product.id },
+          lock: { mode: 'pessimistic_write' },
+        });
 
+        if (!product) {
+          throw new NotFoundException(
+            `Product with id ${item.product.id} not found`,
+          );
+        }
+
+        if (product.stock < item.quantity) {
+          throw new BadRequestException(
+            `Insufficient stock for product ${product.name}`,
+          );
+        }
+
+        product.stock -= item.quantity;
+        await queryRunner.manager.save(product);
+      }
+
+      /**
+       * 4️⃣ Commit
+       */
+      await queryRunner.commitTransaction();
       return request;
     } catch (err) {
       await queryRunner.rollbackTransaction();
@@ -447,7 +479,6 @@ export class RequestsService {
         'rsh.request_id = r.id AND rsh.created_at = latest.max_created_at',
       );
 
-  
     if (user.role === UserRole.BRANCH) {
       qb.innerJoin(
         (qb) =>
