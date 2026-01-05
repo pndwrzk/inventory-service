@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, ILike, Repository } from 'typeorm';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Request } from './request.entity';
@@ -161,6 +161,7 @@ export class RequestsService {
   async findAll(
     page: number,
     size: number,
+    search: string,
     userId: string,
   ): Promise<{
     data: RequestResponseDto[];
@@ -176,10 +177,18 @@ export class RequestsService {
       throw new NotFoundException(`User Not Found`);
     }
 
+    const where: FindOptionsWhere<Request> = {};
+
+    if (user.role === UserRole.BRANCH) {
+      where.created_by = { id: userId };
+    }
+
+    if (search) {
+      where.code = ILike(`%${search}%`);
+    }
+
     const [requests, total] = await this.requestRepository.findAndCount({
-      where: {
-        created_by: user.role === UserRole.BRANCH ? { id: userId } : {},
-      },
+      where,
       relations: [
         'items',
         'items.product',
@@ -197,7 +206,7 @@ export class RequestsService {
       take: size,
     });
 
-    console.log(requests,total)
+    console.log(requests, total);
 
     const totalPage = Math.ceil(total / size);
 
@@ -379,7 +388,6 @@ export class RequestsService {
         await queryRunner.manager.save(product);
       }
 
-     
       await queryRunner.commitTransaction();
       return request;
     } catch (err) {

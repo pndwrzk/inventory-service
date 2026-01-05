@@ -116,6 +116,7 @@ export class RequestsController {
   async findAll(
     @Query('page') page = 1,
     @Query('size') size = 10,
+    @Query('search') search,
     @Req() req: { user: JwtUser },
   ) {
     const userId = req.user.userId;
@@ -125,6 +126,7 @@ export class RequestsController {
     const { data, meta } = await this.requestsService.findAll(
       pageNumber,
       pageSize,
+      search,
       userId,
     );
     return BaseResponse.Success(data, 'Requests retrieved successfully', {
