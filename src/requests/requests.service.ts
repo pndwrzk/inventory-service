@@ -187,24 +187,21 @@ export class RequestsService {
       where.code = ILike(`%${search}%`);
     }
 
-    const [requests, total] = await this.requestRepository.findAndCount({
-      where,
-      relations: [
-        'items',
-        'items.product',
-        'statusHistories.attachments',
-        'statusHistories',
-        'statusHistories.user',
-      ],
-      order: {
-        created_at: 'DESC',
-        statusHistories: {
-          created_at: 'DESC',
-        },
-      },
-      skip,
-      take: size,
-    });
+    const qb = this.requestRepository
+  .createQueryBuilder('request')
+  .leftJoinAndSelect('request.items', 'items')
+  .leftJoinAndSelect('items.product', 'product')
+  .leftJoinAndSelect('request.statusHistories', 'statusHistories')
+  .leftJoinAndSelect('statusHistories.user', 'user')
+  .leftJoinAndSelect('statusHistories.attachments', 'attachments') 
+
+  .where(where)
+  .orderBy('request.created_at', 'DESC')
+  .addOrderBy('statusHistories.created_at', 'DESC')
+  .skip(skip)
+  .take(size);
+
+const [requests, total] = await qb.getManyAndCount();
 
     console.log(requests, total);
 
