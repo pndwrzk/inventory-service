@@ -40,12 +40,14 @@ export class BranchesController {
   })
   async create(
     @Body() dto: CreateBranchDto,
-  ): Promise<BaseResponse<IdResponseDto>> {
-    const branch = await this.branchesService.create(dto);
-    return BaseResponse.Success(
-      { id: branch.id },
-      'Branch created successfully',
-    );
+  ): Promise<
+    BaseResponse<{
+      branch: Branch;
+      account: { username: string; password: string };
+    }>
+  > {
+    const result = await this.branchesService.create(dto);
+    return BaseResponse.Success(result, 'Branch created successfully');
   }
 
   @Get()

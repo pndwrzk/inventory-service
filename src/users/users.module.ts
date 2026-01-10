@@ -17,6 +17,6 @@ import { Branch } from 'src/branches/branch.entity';
   ],
   providers: [UsersService, JwtAccessStrategy, JwtRefreshStrategy],
   controllers: [UsersController],
-  exports: [UsersService],
+  exports: [UsersService, JwtModule],
 })
 export class UsersModule {}

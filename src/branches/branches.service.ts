@@ -4,17 +4,40 @@ import { ILike, Repository } from 'typeorm';
 import { Branch } from './branch.entity';
 import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
+import { User } from 'src/users/user.entity';
+import { UsersService } from 'src/users/users.service';
+import { UserRole } from 'src/users/user-role.enum';
 
 @Injectable()
 export class BranchesService {
   constructor(
     @InjectRepository(Branch)
     private readonly branchRepo: Repository<Branch>,
+      @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
+    private readonly userService: UsersService,
   ) {}
 
-  async create(dto: CreateBranchDto): Promise<Branch> {
+  async create(dto: CreateBranchDto): Promise<{ branch: Branch; account: { username: string; password: string } }> {
     const branch = this.branchRepo.create(dto);
-    return await this.branchRepo.save(branch);
+    const userName = dto.name.toLowerCase().replace(/\s+/g, '_');
+    const password = await this.generatePassword();
+    await this.userService.create({
+      username: userName,
+      password: password,
+      role: UserRole.BRANCH,
+      branch_id: branch.id,
+      full_name: dto.name,
+    });
+
+    const result = await this.branchRepo.save(branch);
+    return {
+      branch: result,
+      account: {
+        username: dto.name.toLowerCase().replace(/\s+/g, '_'),
+        password,
+      }
+    }
   }
   async findAll(
     page: number,
@@ -67,8 +90,21 @@ export class BranchesService {
 
   async remove(id: string): Promise<void> {
     const result = await this.branchRepo.delete(id);
-    if (!result.affected) {
-      throw new Error(`Branch with id ${id} not found`);
+    if (result.affected) {
+      await this.userRepo.delete({ branch: { id } });
+      return;
     }
+    throw new Error(`Branch with id ${id} not found`);
+  }
+
+  async generatePassword(): Promise<string> {
+    const length = 8;
+    const charset =
+      'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+~`|}{[]:;?><,./-=';
+    let password = '';
+    for (let i = 0, n = charset.length; i < length; ++i) {
+      password += charset.charAt(Math.floor(Math.random() * n));
+    }
+    return password;
   }
 }
