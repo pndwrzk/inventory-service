@@ -270,11 +270,11 @@ export class RequestsController {
 @Get('export')
 @ApiOperation({ summary: 'Export all requests to Excel' })
 async exportAll(
-  @Req() req: { user: JwtUser },
+  
   @Res() res: express.Response,
 ) {
   const file = await this.requestsService.exportAllRequests(
-    req.user.userId,
+    
   );
 
   res.set({

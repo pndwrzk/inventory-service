@@ -593,14 +593,8 @@ export class RequestsService {
     };
   }
 
-  async exportAllRequests(userId: string): Promise<StreamableFile> {
-    const user = await this.userRepository.findOne({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
+  async exportAllRequests(): Promise<StreamableFile> {
+    
 
     const qb = this.requestRepository
       .createQueryBuilder('r')
@@ -611,9 +605,7 @@ export class RequestsService {
       .orderBy('r.created_at', 'DESC')
       .addOrderBy('sh.created_at', 'DESC');
 
-    if (user.role === UserRole.BRANCH) {
-      qb.where('r.created_by = :userId', { userId });
-    }
+    
 
     const requests = await qb.getMany();
     const workbook = new ExcelJS.Workbook();
