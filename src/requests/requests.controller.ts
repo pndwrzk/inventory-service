@@ -12,7 +12,9 @@ import {
   Delete,
   Query,
   Header,
+  Res,
 } from '@nestjs/common';
+import express from 'express';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiConsumes,
@@ -265,15 +267,24 @@ export class RequestsController {
     return BaseResponse.Success(request, 'Request retrieved successfully');
   }
 
-  @Get('export')
-  @ApiOperation({ summary: 'Export all requests to Excel' })
-  @ApiResponse({ status: 200, description: 'Excel file downloaded' })
-  @Header(
-    'Content-Type',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  )
-  @Header('Content-Disposition', 'attachment; filename="requests-export.xlsx"')
-  async exportAll(@Req() req: { user: JwtUser }) {
-    return this.requestsService.exportAllRequests(req.user.userId);
-  }
+@Get('export')
+@ApiOperation({ summary: 'Export all requests to Excel' })
+async exportAll(
+  @Req() req: { user: JwtUser },
+  @Res() res: express.Response,
+) {
+  const file = await this.requestsService.exportAllRequests(
+    req.user.userId,
+  );
+
+  res.set({
+    'Content-Type':
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'Content-Disposition':
+      'attachment; filename="requests-export.xlsx"',
+  });
+
+  file.getStream().pipe(res);
+}
+
 }
