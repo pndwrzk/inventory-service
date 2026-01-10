@@ -19,7 +19,7 @@ export class BranchesService {
   ) {}
 
   async create(dto: CreateBranchDto): Promise<{ branch: Branch; account: { username: string; password: string } }> {
-    const branch = this.branchRepo.create(dto);
+    const branch = await this.branchRepo.create(dto);
     const userName = dto.name.toLowerCase().replace(/\s+/g, '_');
     const password = await this.generatePassword();
     await this.userService.create({
