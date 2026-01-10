@@ -267,15 +267,12 @@ export class RequestsController {
 
   @Get('export')
   @ApiOperation({ summary: 'Export all requests to Excel' })
-  @ApiResponse({
-    status: 200,
-    description: 'Excel file exported',
-  })
+  @ApiResponse({ status: 200, description: 'Excel file downloaded' })
   @Header(
     'Content-Type',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   )
-  @Header('Content-Disposition', 'attachment; filename=requests-export.xlsx')
+  @Header('Content-Disposition', 'attachment; filename="requests-export.xlsx"')
   async exportAll(@Req() req: { user: JwtUser }) {
     return this.requestsService.exportAllRequests(req.user.userId);
   }
