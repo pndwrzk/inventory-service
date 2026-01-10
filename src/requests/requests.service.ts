@@ -2,11 +2,13 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  StreamableFile,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, ILike, Repository } from 'typeorm';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as ExcelJS from 'exceljs';
 import { Request } from './request.entity';
 import { RequestItem } from '../request-item/request-item.entity';
 import { Attachment } from '../attachments/attachments.entity';
@@ -188,20 +190,20 @@ export class RequestsService {
     }
 
     const qb = this.requestRepository
-  .createQueryBuilder('request')
-  .leftJoinAndSelect('request.items', 'items')
-  .leftJoinAndSelect('items.product', 'product')
-  .leftJoinAndSelect('request.statusHistories', 'statusHistories')
-  .leftJoinAndSelect('statusHistories.user', 'user')
-  .leftJoinAndSelect('statusHistories.attachments', 'attachments') 
+      .createQueryBuilder('request')
+      .leftJoinAndSelect('request.items', 'items')
+      .leftJoinAndSelect('items.product', 'product')
+      .leftJoinAndSelect('request.statusHistories', 'statusHistories')
+      .leftJoinAndSelect('statusHistories.user', 'user')
+      .leftJoinAndSelect('statusHistories.attachments', 'attachments')
 
-  .where(where)
-  .orderBy('request.created_at', 'DESC')
-  .addOrderBy('statusHistories.created_at', 'DESC')
-  .skip(skip)
-  .take(size);
+      .where(where)
+      .orderBy('request.created_at', 'DESC')
+      .addOrderBy('statusHistories.created_at', 'DESC')
+      .skip(skip)
+      .take(size);
 
-const [requests, total] = await qb.getManyAndCount();
+    const [requests, total] = await qb.getManyAndCount();
 
     console.log(requests, total);
 
@@ -589,5 +591,66 @@ const [requests, total] = await qb.getManyAndCount();
       created_at: request.created_at,
       updated_at: request.updated_at,
     };
+  }
+
+  async exportAllRequests(userId: string): Promise<StreamableFile> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const qb = this.requestRepository
+      .createQueryBuilder('r')
+      .leftJoinAndSelect('r.items', 'items')
+      .leftJoinAndSelect('items.product', 'product')
+      .leftJoinAndSelect('r.statusHistories', 'sh')
+      .leftJoinAndSelect('sh.user', 'sh_user')
+      .orderBy('r.created_at', 'DESC')
+      .addOrderBy('sh.created_at', 'DESC');
+
+    if (user.role === UserRole.BRANCH) {
+      qb.where('r.created_by = :userId', { userId });
+    }
+
+    const requests = await qb.getMany();
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Requests');
+
+    sheet.columns = [
+      { header: 'Request Code', key: 'code', width: 25 },
+      { header: 'Current Status', key: 'status', width: 15 },
+      { header: 'Created By', key: 'created_by', width: 25 },
+      { header: 'Pickup Schedule', key: 'pickup_schedule', width: 20 },
+      { header: 'Items', key: 'items', width: 50 },
+      { header: 'Created At', key: 'created_at', width: 20 },
+    ];
+
+    sheet.getRow(1).font = { bold: true };
+
+    for (const req of requests) {
+      const latestStatus = req.statusHistories?.[0];
+      const firstStatus = req.statusHistories?.[req.statusHistories.length - 1];
+
+      sheet.addRow({
+        code: req.code,
+        status: latestStatus?.status ?? '-',
+        created_by: firstStatus?.user?.full_name ?? '-',
+        pickup_schedule: req.pickup_schedule
+          ? req.pickup_schedule.toISOString()
+          : '-',
+        items: req.items
+          .map(
+            (i) => `${i.product?.name ?? 'Unknown Product'} (x${i.quantity})`,
+          )
+          .join(', '),
+        created_at: req.created_at.toISOString(),
+      });
+    }
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    return new StreamableFile(new Uint8Array(buffer));
   }
 }

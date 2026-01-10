@@ -11,6 +11,7 @@ import {
   Param,
   Delete,
   Query,
+  Header,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import {
@@ -130,7 +131,7 @@ export class RequestsController {
       userId,
     );
     return BaseResponse.Success(data, 'Requests retrieved successfully', {
-      total_data : meta.total,
+      total_data: meta.total,
       page: meta.page,
       size: meta.size,
       total_page: meta.totalPage,
@@ -262,5 +263,20 @@ export class RequestsController {
     const request = await this.requestsService.findByCode(code);
 
     return BaseResponse.Success(request, 'Request retrieved successfully');
+  }
+
+  @Get('export')
+  @ApiOperation({ summary: 'Export all requests to Excel' })
+  @ApiResponse({
+    status: 200,
+    description: 'Excel file exported',
+  })
+  @Header(
+    'Content-Type',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  )
+  @Header('Content-Disposition', 'attachment; filename=requests-export.xlsx')
+  async exportAll(@Req() req: { user: JwtUser }) {
+    return this.requestsService.exportAllRequests(req.user.userId);
   }
 }

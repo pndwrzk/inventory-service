@@ -13,36 +13,37 @@ export class BranchesService {
   constructor(
     @InjectRepository(Branch)
     private readonly branchRepo: Repository<Branch>,
-      @InjectRepository(User)
+    @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     private readonly userService: UsersService,
   ) {}
-   async create(dto: CreateBranchDto): Promise<{ branch: Branch; account: { username: string; password: string } }> {
-  
-  const branch = await this.branchRepo.save(
-    this.branchRepo.create(dto),
-  );
+  async create(
+    dto: CreateBranchDto,
+  ): Promise<{
+    branch: Branch;
+    account: { username: string; password: string };
+  }> {
+    const branch = await this.branchRepo.save(this.branchRepo.create(dto));
 
+    const username = dto.name.toLowerCase().replace(/\s+/g, '_');
+    const password = await this.generatePassword();
 
-  const username = dto.name.toLowerCase().replace(/\s+/g, '_');
-  const password = await this.generatePassword();
-
-  await this.userService.create({
-    username,
-    password,
-    role: UserRole.BRANCH,
-    branch_id: branch.id, 
-    full_name: dto.name,
-  });
-
-  return {
-    branch,
-    account: {
+    await this.userService.create({
       username,
       password,
-    },
-  };
-}
+      role: UserRole.BRANCH,
+      branch_id: branch.id,
+      full_name: dto.name,
+    });
+
+    return {
+      branch,
+      account: {
+        username,
+        password,
+      },
+    };
+  }
 
   async findAll(
     page: number,
