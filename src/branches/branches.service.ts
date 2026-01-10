@@ -17,28 +17,33 @@ export class BranchesService {
     private readonly userRepo: Repository<User>,
     private readonly userService: UsersService,
   ) {}
+   async create(dto: CreateBranchDto): Promise<{ branch: Branch; account: { username: string; password: string } }> {
+  
+  const branch = await this.branchRepo.save(
+    this.branchRepo.create(dto),
+  );
 
-  async create(dto: CreateBranchDto): Promise<{ branch: Branch; account: { username: string; password: string } }> {
-    const branch = await this.branchRepo.create(dto);
-    const userName = dto.name.toLowerCase().replace(/\s+/g, '_');
-    const password = await this.generatePassword();
-    await this.userService.create({
-      username: userName,
-      password: password,
-      role: UserRole.BRANCH,
-      branch_id: branch.id,
-      full_name: dto.name,
-    });
 
-    const result = await this.branchRepo.save(branch);
-    return {
-      branch: result,
-      account: {
-        username: dto.name.toLowerCase().replace(/\s+/g, '_'),
-        password,
-      }
-    }
-  }
+  const username = dto.name.toLowerCase().replace(/\s+/g, '_');
+  const password = await this.generatePassword();
+
+  await this.userService.create({
+    username,
+    password,
+    role: UserRole.BRANCH,
+    branch_id: branch.id, 
+    full_name: dto.name,
+  });
+
+  return {
+    branch,
+    account: {
+      username,
+      password,
+    },
+  };
+}
+
   async findAll(
     page: number,
     size: number,
